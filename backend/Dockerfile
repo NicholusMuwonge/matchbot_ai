@@ -20,12 +20,19 @@ ENV UV_COMPILE_BYTECODE=1
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#caching
 ENV UV_LINK_MODE=copy
 
+# Set network timeouts for UV
+ENV UV_HTTP_TIMEOUT=300
+ENV UV_REQUEST_TIMEOUT=300
+
 # Install dependencies
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project
+    sh -c 'for i in 1 2 3 4 5; do \
+        uv sync --frozen --no-install-project && break || \
+        echo "Attempt $i failed, retrying in 5 seconds..." && sleep 5; \
+    done'
 
 ENV PYTHONPATH=/app
 
@@ -38,6 +45,9 @@ COPY ./app /app/app
 # Sync the project
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync
+    sh -c 'for i in 1 2 3 4 5; do \
+        uv sync && break || \
+        echo "Attempt $i failed, retrying in 5 seconds..." && sleep 5; \
+    done'
 
 CMD ["fastapi", "run", "--workers", "4", "app/main.py"]

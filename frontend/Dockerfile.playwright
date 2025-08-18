@@ -4,9 +4,15 @@ WORKDIR /app
 
 COPY package*.json /app/
 
-RUN npm install
+RUN for i in 1 2 3 4 5; do \
+        npm install && break || \
+        echo "Attempt $i failed, retrying in 5 seconds..." && sleep 5; \
+    done
 
-RUN npx -y playwright install --with-deps
+RUN for i in 1 2 3 4 5; do \
+        npx -y playwright install --with-deps && break || \
+        echo "Attempt $i failed, retrying in 5 seconds..." && sleep 5; \
+    done
 
 COPY ./ /app/
 

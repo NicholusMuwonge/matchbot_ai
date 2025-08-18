@@ -7,6 +7,10 @@ services:
   # DOMAIN=localhost.tiangolo.com
   proxy:
     image: traefik:3.0
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
@@ -14,6 +18,8 @@ services:
       - "8090:8080"
     # Duplicate the command from docker-compose.yml to add --api.insecure=true
     command:
+      # Disable version check to avoid DNS issues
+      - --global.checkNewVersion=false
       # Enable Docker in Traefik, so that it reads labels from Docker services
       - --providers.docker
       # Add a constraint to only use services with the label for this stack
@@ -50,17 +56,39 @@ services:
     ports:
       - "5432:5432"
 
+  prestart:
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    build:
+      context: ./backend
+      network: host
+
   adminer:
     restart: "no"
     ports:
       - "8080:8080"
+    labels:
+      # Override the TLS cert resolver for local development
+      - traefik.http.routers.${STACK_NAME?Variable not set}-adminer-https.tls=false
+      - traefik.http.routers.${STACK_NAME?Variable not set}-adminer-https.tls.certresolver=
 
   backend:
     restart: "no"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     ports:
       - "8000:8000"
     build:
       context: ./backend
+      network: host
+    labels:
+      # Override the TLS cert resolver for local development
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.tls=false
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.tls.certresolver=
     # command: sleep infinity  # Infinite loop to keep container alive doing nothing
     command:
       - fastapi
@@ -98,17 +126,23 @@ services:
       - "5173:80"
     build:
       context: ./frontend
+      network: host
       args:
-        - VITE_API_URL=http://localhost:8000
-        - NODE_ENV=development
+        VITE_API_URL: ""
+        NODE_ENV: development
+    labels:
+      # Override the TLS cert resolver for local development
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.tls=false
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.tls.certresolver=
 
   playwright:
     build:
       context: ./frontend
       dockerfile: Dockerfile.playwright
+      network: host
       args:
-        - VITE_API_URL=http://backend:8000
-        - NODE_ENV=production
+        VITE_API_URL: "http://backend:8000"
+        NODE_ENV: production
     ipc: host
     depends_on:
       - backend
@@ -131,3 +165,10 @@ networks:
   traefik-public:
     # For local dev, don't expect an external Traefik network
     external: false
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-traefik
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-matchbot

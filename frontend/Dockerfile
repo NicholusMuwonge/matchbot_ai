@@ -5,13 +5,18 @@ WORKDIR /app
 
 COPY package*.json /app/
 
-RUN npm install
+RUN for i in 1 2 3 4 5; do \
+        npm install && break || \
+        echo "Attempt $i failed, retrying in 5 seconds..." && sleep 5; \
+    done
 
 COPY ./ /app/
 
-ARG VITE_API_URL=${VITE_API_URL}
+ARG VITE_API_URL
 
-RUN npm run build
+ENV VITE_API_URL=${VITE_API_URL}
+
+RUN echo "Building with VITE_API_URL=${VITE_API_URL}" && npm run build
 
 
 # Stage 1, based on Nginx, to have only the compiled app, ready for production with Nginx
