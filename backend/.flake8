@@ -3,7 +3,7 @@
 # Maximum line length (compatible with Black)
 max-line-length = 88
 # Ignore rules that conflict with Black
-ignore = 
+ignore =
     # E203: whitespace before ':' (conflicts with Black)
     E203,
     # W503: line break before binary operator (conflicts with Black)
@@ -13,7 +13,7 @@ ignore =
 # Maximum complexity for functions and methods
 max-complexity = 10
 # Exclude directories from linting
-exclude = 
+exclude =
     .git,
     __pycache__,
     .venv,
