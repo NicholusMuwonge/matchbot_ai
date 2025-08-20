@@ -4,14 +4,15 @@ This project uses multiple code quality tools to ensure consistent style and cat
 
 ## Available Tools
 
-### Modern Approach (Recommended)
-- **Ruff**: Fast, modern linter and formatter that combines the functionality of multiple tools
+### Modern Approach (Recommended - MAT-12)
+- **Ruff**: Fast, modern linter and formatter that replaces Black, isort, and Flake8
 - Scripts: `./scripts/format.sh`, `./scripts/lint.sh`
+- **Pre-commit hooks**: Automatic formatting and linting on every commit
 
-### Traditional Tools (MAT-11)
+### Traditional Tools (MAT-11 - Legacy Support)
 - **Black**: Opinionated Python code formatter
 - **isort**: Import statement organizer and sorter  
-- **Flake8**: Code linter for style guide enforcement
+- ~~**Flake8**: Code linter~~ *(Removed - ruff handles linting)*
 
 ## Usage
 
@@ -24,47 +25,43 @@ This project uses multiple code quality tools to ensure consistent style and cat
 ./scripts/lint.sh
 ```
 
-### Using Traditional Tools
+### Using Traditional Tools (Legacy)
 ```bash
-# Format with Black and isort
+# Format with Black and isort only
 ./scripts/format-black.sh
 
-# Lint with Flake8, Black check, and isort check
-./scripts/lint-flake8.sh
+# Note: No separate linting script - use ruff for linting
+./scripts/lint.sh
 ```
 
 ### Individual Tool Usage
 ```bash
-# Black formatting
+# Ruff (modern - handles both formatting and linting)
+uv run ruff check app scripts --fix
+uv run ruff format app scripts
+
+# Traditional formatting only
 uv run black app scripts --exclude alembic
-
-# isort import sorting
 uv run isort app scripts --skip alembic
-
-# Flake8 linting
-uv run flake8 app scripts --exclude alembic
 ```
 
 ## Configuration
 
-### Black Configuration
+### Ruff Configuration (Primary)
+- Configured in `pyproject.toml` under `[tool.ruff]`
+- Handles linting, formatting, and import sorting
+- Includes rules equivalent to Flake8, pycodestyle, pyflakes, etc.
+- Much faster than traditional tools
+
+### Black Configuration (Legacy Support)
 - Line length: 88 characters
 - Target Python versions: 3.10, 3.11, 3.12
 - Configured in `pyproject.toml` under `[tool.black]`
 
-### isort Configuration  
+### isort Configuration (Legacy Support)
 - Profile: "black" (compatible with Black)
 - Line length: 88 characters
 - Configured in `pyproject.toml` under `[tool.isort]`
-
-### Flake8 Configuration
-- Line length: 88 characters (compatible with Black)
-- Max complexity: 10
-- Configured in `.flake8`
-
-### Ruff Configuration
-- Configured in `pyproject.toml` under `[tool.ruff]`
-- Includes linting rules equivalent to Flake8, pycodestyle, pyflakes, etc.
 
 ## Excluded Files
 All tools are configured to exclude:
@@ -73,5 +70,16 @@ All tools are configured to exclude:
 - `__pycache__/`
 - `.git/`
 
-## Integration
-Both tool sets are configured to work together without conflicts. You can use either approach, but Ruff is recommended for better performance.
+## Pre-commit Integration (MAT-12)
+Git hooks automatically run ruff on every commit:
+- **ruff-check**: Linting with auto-fix
+- **ruff-format**: Code formatting
+- **pytest**: Run tests
+
+To bypass hooks in emergencies: `git commit --no-verify`
+
+## Migration from Traditional Tools
+- **Flake8 → ruff-check**: Same linting rules, much faster
+- **Black → ruff-format**: Same formatting, integrated with linting  
+- **isort → ruff-check**: Import sorting included in ruff
+- **All three → ruff**: Single tool, consistent results, better performance
