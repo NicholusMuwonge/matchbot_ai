@@ -120,6 +120,24 @@ services:
       - "1080:1080"
       - "1025:1025"
 
+  redis-commander:
+    restart: "no"
+    ports:
+      - "8081:8081"
+    labels:
+      # Override the TLS cert resolver for local development
+      - traefik.http.routers.${STACK_NAME?Variable not set}-redis-commander-https.tls=false
+      - traefik.http.routers.${STACK_NAME?Variable not set}-redis-commander-https.tls.certresolver=
+
+  flower:
+    restart: "no"
+    ports:
+      - "5555:5555"
+    labels:
+      # Override the TLS cert resolver for local development
+      - traefik.http.routers.${STACK_NAME?Variable not set}-flower-https.tls=false
+      - traefik.http.routers.${STACK_NAME?Variable not set}-flower-https.tls.certresolver=
+
   frontend:
     restart: "no"
     ports:

@@ -57,6 +57,25 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
 
+    # Redis configuration for Celery and caching
+    REDIS_URL: str = "redis://localhost:6379"
+    
+    # Default Celery configuration (fallbacks)
+    CELERY_TASK_TIME_LIMIT: int = 30 * 60  # 30 minutes default
+    CELERY_TASK_SOFT_TIME_LIMIT: int = 25 * 60  # 25 minutes default
+    CELERY_WORKER_PREFETCH_MULTIPLIER: int = 1
+    CELERY_WORKER_MAX_TASKS_PER_CHILD: int = 1000
+    
+    # Task-specific time limits (with fallbacks to defaults)
+    COMPUTATION_TASK_TIME_LIMIT: int = 60 * 60  # 1 hour for heavy computation
+    COMPUTATION_TASK_SOFT_TIME_LIMIT: int = 55 * 60  # 55 minutes
+    
+    FILE_PROCESSING_TASK_TIME_LIMIT: int = 45 * 60  # 45 minutes for file processing
+    FILE_PROCESSING_TASK_SOFT_TIME_LIMIT: int = 40 * 60  # 40 minutes
+    
+    REDIS_TASK_TIME_LIMIT: int = 5 * 60  # 5 minutes for simple Redis operations
+    REDIS_TASK_SOFT_TIME_LIMIT: int = 4 * 60  # 4 minutes
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:

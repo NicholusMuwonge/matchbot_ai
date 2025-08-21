@@ -74,6 +74,19 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - REDIS_URL=redis://redis:6379
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
@@ -107,6 +120,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - REDIS_URL=redis://redis:6379
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
@@ -133,6 +147,90 @@ services:
 
       # Enable redirection for HTTP and HTTPS
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.middlewares=https-redirect
+
+  celery-worker:
+    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    restart: always
+    command: celery -A app.core.celery worker --loglevel=info --queues=default,heavy_compute,file_processing
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+        restart: true
+      prestart:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      - DOMAIN=${DOMAIN}
+      - FRONTEND_HOST=${FRONTEND_HOST?Variable not set}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
+      - SECRET_KEY=${SECRET_KEY?Variable not set}
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - REDIS_URL=redis://redis:6379
+    build:
+      context: ./backend
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    restart: always
+    networks:
+      - traefik-public
+      - default
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=changethis
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+      - traefik.http.routers.${STACK_NAME?Variable not set}-redis-commander-http.rule=Host(`redis.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-redis-commander-http.entrypoints=http
+      - traefik.http.routers.${STACK_NAME?Variable not set}-redis-commander-http.middlewares=https-redirect
+      - traefik.http.routers.${STACK_NAME?Variable not set}-redis-commander-https.rule=Host(`redis.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-redis-commander-https.entrypoints=https
+      - traefik.http.routers.${STACK_NAME?Variable not set}-redis-commander-https.tls=true
+      - traefik.http.routers.${STACK_NAME?Variable not set}-redis-commander-https.tls.certresolver=le
+      - traefik.http.services.${STACK_NAME?Variable not set}-redis-commander.loadbalancer.server.port=8081
+
+  flower:
+    image: mher/flower:latest
+    restart: always
+    networks:
+      - traefik-public
+      - default
+    depends_on:
+      redis:
+        condition: service_healthy
+      celery-worker:
+        condition: service_started
+    command: celery flower --broker=redis://redis:6379 --port=5555
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379
+      - FLOWER_BASIC_AUTH=admin:changethis
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+      - traefik.http.routers.${STACK_NAME?Variable not set}-flower-http.rule=Host(`flower.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-flower-http.entrypoints=http
+      - traefik.http.routers.${STACK_NAME?Variable not set}-flower-http.middlewares=https-redirect
+      - traefik.http.routers.${STACK_NAME?Variable not set}-flower-https.rule=Host(`flower.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-flower-https.entrypoints=https
+      - traefik.http.routers.${STACK_NAME?Variable not set}-flower-https.tls=true
+      - traefik.http.routers.${STACK_NAME?Variable not set}-flower-https.tls.certresolver=le
+      - traefik.http.services.${STACK_NAME?Variable not set}-flower.loadbalancer.server.port=5555
 
   frontend:
     image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
@@ -164,6 +262,7 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect
 volumes:
   app-db-data:
+  redis-data:
 
 networks:
   traefik-public:
