@@ -30,9 +30,16 @@ celery_app.conf.update(
     ],
 )
 
-# Optional: Configure task routes for different queues
+# Configure task routes for different queues
 celery_app.conf.task_routes = {
-    "app.tasks.example_tasks.*": {"queue": "default"},
+    "app.tasks.example_tasks.add_numbers": {"queue": "default"},
+    "app.tasks.example_tasks.test_redis_connection": {"queue": "default"},
+    "app.tasks.example_tasks.process_heavy_computation_task": {
+        "queue": "heavy_compute"
+    },
+    "app.tasks.example_tasks.process_large_file_upload_task": {
+        "queue": "file_processing"
+    },
     # Add more routing rules as needed
 }
 

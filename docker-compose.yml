@@ -151,7 +151,7 @@ services:
   celery-worker:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     restart: always
-    command: celery -A app.core.celery worker --loglevel=info
+    command: celery -A app.core.celery worker --loglevel=info --queues=default,heavy_compute,file_processing
     depends_on:
       redis:
         condition: service_healthy
