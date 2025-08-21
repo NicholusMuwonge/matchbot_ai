@@ -46,20 +46,20 @@ def _perform_redis_connection_test(redis_client) -> dict:
         }
 
 
-def _build_redis_test_response(success: bool, redis_url: str, message: str) -> dict:
-    """Build Redis test response structure."""
-    return {
-        "status": "success" if success else "failed",
-        "redis_url": redis_url,
-        "test_passed": success,
-        "message": message,
-    }
-
-
-def _build_redis_test_error_response(error_message: str) -> dict:
-    """Build Redis test error response structure."""
-    return {
-        "status": "error",
-        "message": f"Redis connection failed: {error_message}",
-        "test_passed": False,
-    }
+def _build_redis_test_response(
+    success: bool, redis_url: str = None, message: str = None, error_message: str = None
+) -> dict:
+    """Build Redis test response structure for both success and error cases."""
+    if success:
+        return {
+            "status": "success",
+            "redis_url": redis_url,
+            "test_passed": True,
+            "message": message or "Redis operations completed successfully",
+        }
+    else:
+        return {
+            "status": "error",
+            "test_passed": False,
+            "message": error_message or f"Redis connection failed: {message}",
+        }

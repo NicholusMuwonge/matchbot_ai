@@ -188,6 +188,14 @@ Traefik UI: http://localhost:8090
 
 MailCatcher: http://localhost:1080
 
+Redis Commander (Redis UI): http://localhost:8081
+- Username: `admin`
+- Password: `changethis`
+
+Flower (Celery Monitoring): http://localhost:5555
+- Username: `admin`
+- Password: `changethis`
+
 ### Development URLs with `localhost.tiangolo.com` Configured
 
 Development URLs, for local development.
@@ -205,3 +213,11 @@ Adminer: http://localhost.tiangolo.com:8080
 Traefik UI: http://localhost.tiangolo.com:8090
 
 MailCatcher: http://localhost.tiangolo.com:1080
+
+Redis Commander (Redis UI): http://redis.localhost.tiangolo.com
+- Username: `admin`
+- Password: `changethis`
+
+Flower (Celery Monitoring): http://flower.localhost.tiangolo.com
+- Username: `admin`
+- Password: `changethis`

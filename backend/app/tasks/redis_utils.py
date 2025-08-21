@@ -3,13 +3,14 @@ Redis connection and testing tasks.
 """
 
 import logging
+
 from app.core.celery import celery_app
 from app.core.config import settings
+
 from .redis_client import (
+    _build_redis_test_response,
     _create_redis_client,
     _perform_redis_connection_test,
-    _build_redis_test_response,
-    _build_redis_test_error_response
 )
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @celery_app.task(
     time_limit=settings.REDIS_TASK_TIME_LIMIT,
-    soft_time_limit=settings.REDIS_TASK_SOFT_TIME_LIMIT
+    soft_time_limit=settings.REDIS_TASK_SOFT_TIME_LIMIT,
 )
 def add_numbers(x: int, y: int):
     """
@@ -38,7 +39,7 @@ def add_numbers(x: int, y: int):
 
 @celery_app.task(
     time_limit=settings.REDIS_TASK_TIME_LIMIT,
-    soft_time_limit=settings.REDIS_TASK_SOFT_TIME_LIMIT
+    soft_time_limit=settings.REDIS_TASK_SOFT_TIME_LIMIT,
 )
 def test_redis_connection():
     """
@@ -57,11 +58,14 @@ def test_redis_connection():
         success = test_result["success"]
 
         return _build_redis_test_response(
-            success, settings.REDIS_URL, test_result.get("message", "")
+            success=success,
+            redis_url=settings.REDIS_URL,
+            message=test_result.get("message", ""),
         )
 
     except Exception as connection_error:
         logger.error(f"Redis connection test failed: {connection_error}", exc_info=True)
-        return _build_redis_test_error_response(str(connection_error))
-
-
+        return _build_redis_test_response(
+            success=False,
+            error_message=f"Redis connection failed: {str(connection_error)}",
+        )
