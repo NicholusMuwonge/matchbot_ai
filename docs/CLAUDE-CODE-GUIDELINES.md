@@ -56,6 +56,7 @@ This document outlines the comprehensive guidelines that Claude must follow when
 7. **Ask for Context**: If feature requirements are unclear or lacking, ask for more details before implementation
 8. **Error Handling**: Always implement proper error handling
 9. **Logging**: Add structured logging for debugging
+10. **File Size Limit**: Keep all files under 100 lines maximum - split into focused modules if needed
 
 ### Design Patterns & Architecture
 
@@ -73,6 +74,42 @@ This document outlines the comprehensive guidelines that Claude must follow when
 - **Dependency Injection**: For testable, loosely coupled code
 - **Repository Pattern**: For data access abstraction
 
+#### Architecture Layer Separation - MANDATORY
+
+**Services Layer** - WHERE ALL HEAVY LOGIC BELONGS:
+- **Business Logic**: Complex algorithms, calculations, decision trees
+- **Data Processing**: File processing, data transformation, aggregations
+- **External Integrations**: API calls, third-party service interactions
+- **Complex Validations**: Multi-step validation workflows
+- **Heavy Computations**: CPU-intensive operations (use Celery tasks for async)
+- **Orchestration**: Coordinating multiple operations or data sources
+
+**Controllers/Routes** - KEEP THIN:
+- HTTP request/response handling only
+- Input validation (simple Pydantic validation)
+- Authentication/authorization checks
+- Calling appropriate services
+- Response formatting and error handling
+- **NO business logic, NO complex computations**
+
+**Models** - LIGHTWEIGHT DATA CONTAINERS:
+- Data structure definitions (Pydantic/SQLAlchemy models)
+- Basic field validation (type checking, required fields)
+- Simple computed properties (derived from existing fields)
+- **NO business logic, NO external calls, NO complex operations**
+
+**Repositories** - DATA ACCESS ONLY:
+- Database queries and transactions
+- Data persistence patterns
+- Basic filtering and sorting
+- **NO business logic, NO data transformation beyond persistence**
+
+**Utils** - SIMPLE HELPERS ONLY:
+- Stateless utility functions
+- Format converters, date helpers, string manipulations
+- Simple mathematical operations
+- **NO complex business logic, NO external dependencies**
+
 #### Code Quality Rules
 - **Function Decomposition**: Break functions into smaller functions with very clear, descriptive names
 - **Length vs Clarity**: Function name length doesn't matter - prioritize clear, concise naming over brevity
@@ -83,7 +120,125 @@ This document outlines the comprehensive guidelines that Claude must follow when
 - **Try-Catch Mandatory**: Use proper exception handling with try-catch blocks
 - **Proper Logging**: Add structured logging at appropriate levels for debugging
 
-#### Examples of Good vs Bad Code
+#### Architecture Layer Examples
+
+**❌ BAD - Heavy logic in controller:**
+```python
+@router.post("/users/{user_id}/recommendations")
+def get_user_recommendations(user_id: str, preferences: PreferencesModel):
+    """DON'T DO THIS - Heavy logic in controller"""
+    # Complex business logic in controller (WRONG!)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, "User not found")
+    
+    # Heavy computation in controller (WRONG!)
+    all_matches = db.query(Match).all()
+    scored_matches = []
+    for match in all_matches:
+        score = 0
+        if match.age >= preferences.min_age and match.age <= preferences.max_age:
+            score += 10
+        if match.location == user.location:
+            score += 15
+        # More complex scoring logic...
+        if score > 50:
+            scored_matches.append((match, score))
+    
+    # External API calls in controller (WRONG!)
+    personality_scores = requests.get(f"https://api.personality.com/score/{user_id}")
+    
+    return {"recommendations": scored_matches}
+```
+
+**✅ GOOD - Thin controller, heavy logic in service:**
+```python
+# Controller - THIN, HTTP concerns only
+@router.post("/users/{user_id}/recommendations")
+def get_user_recommendations(
+    user_id: str, 
+    preferences: PreferencesModel,
+    recommendation_service: RecommendationService = Depends()
+):
+    """Proper thin controller pattern"""
+    try:
+        recommendations = recommendation_service.generate_user_recommendations(
+            user_id, preferences
+        )
+        return {"recommendations": recommendations}
+    except UserNotFoundError:
+        raise HTTPException(404, "User not found")
+    except RecommendationServiceError as e:
+        raise HTTPException(500, f"Service error: {str(e)}")
+
+# Service - WHERE THE HEAVY LOGIC LIVES
+class RecommendationService:
+    def __init__(self, user_repository: UserRepository, match_repository: MatchRepository):
+        self.user_repository = user_repository
+        self.match_repository = match_repository
+        
+    def generate_user_recommendations(
+        self, user_id: str, preferences: PreferencesModel
+    ) -> List[RecommendationResult]:
+        """Heavy business logic lives here"""
+        try:
+            user = self._get_and_validate_user(user_id)
+            potential_matches = self._get_potential_matches(preferences)
+            scored_matches = self._calculate_match_scores(user, potential_matches, preferences)
+            personality_data = self._get_personality_insights(user_id)
+            final_recommendations = self._apply_personality_weighting(scored_matches, personality_data)
+            
+            return final_recommendations
+            
+        except Exception as service_error:
+            logger.error(f"Recommendation generation failed for user {user_id}: {service_error}", exc_info=True)
+            raise RecommendationServiceError(f"Failed to generate recommendations: {str(service_error)}")
+```
+
+**❌ BAD - Business logic in model:**
+```python
+class User(BaseModel):
+    name: str
+    age: int
+    location: str
+    
+    def find_compatible_matches(self, all_users):  # WRONG! Heavy logic in model
+        compatible = []
+        for user in all_users:
+            # Complex matching algorithm in model (BAD!)
+            compatibility_score = self._calculate_compatibility(user)
+            if compatibility_score > 0.8:
+                compatible.append(user)
+        return compatible
+```
+
+**✅ GOOD - Clean model, logic in service:**
+```python
+# Model - Clean data container only
+class User(BaseModel):
+    name: str
+    age: int
+    location: str
+    created_at: datetime
+    
+    @computed_field
+    @property
+    def display_name(self) -> str:
+        """Simple computed property - OK in model"""
+        return self.name.title()
+
+# Service - Complex logic lives here
+class MatchingService:
+    def find_compatible_matches(self, user: User, candidate_users: List[User]) -> List[CompatibilityResult]:
+        """Heavy matching logic belongs in service"""
+        return [
+            self._calculate_user_compatibility(user, candidate)
+            for candidate in candidate_users
+            if self._meets_basic_criteria(user, candidate)
+        ]
+```
+
+#### Examples of Good vs Bad Code Quality
 
 **❌ Bad - Complex, unclear, no error handling:**
 ```python
@@ -182,6 +337,55 @@ def _build_subscription_cache_key(user_id: str, subscription_id: str) -> str:
 - Use descriptive variable names: `database_session` not `db`, `user_repository` not `repo`
 - Add comprehensive logging with appropriate levels
 - **Offload Heavy Tasks**: Any task likely to cause significant overhead on the main thread MUST be executed asynchronously using Celery workers
+- **Services Structure**: Create `/services` directory for all business logic services
+
+#### Services Directory Structure
+```
+app/
+├── services/
+│   ├── __init__.py
+│   ├── user_service.py           # User-related business logic
+│   ├── matching_service.py       # Matching algorithms and logic
+│   ├── recommendation_service.py # Recommendation generation
+│   ├── notification_service.py   # Notification processing
+│   └── analytics_service.py      # Analytics and reporting
+├── api/routes/                   # Thin controllers only
+├── models/                       # Data models only
+├── repositories/                 # Data access only
+└── utils/                        # Simple helpers only
+```
+
+#### Service Class Template
+```python
+import logging
+from typing import List, Optional
+from app.models import SomeModel
+from app.repositories import SomeRepository
+
+logger = logging.getLogger(__name__)
+
+class SomeService:
+    def __init__(self, some_repository: SomeRepository):
+        self.some_repository = some_repository
+    
+    def complex_business_operation(self, input_data: SomeModel) -> ResultModel:
+        """Heavy business logic lives here"""
+        try:
+            # Complex business logic implementation
+            validated_data = self._validate_complex_business_rules(input_data)
+            processed_data = self._apply_complex_transformations(validated_data)
+            result = self._orchestrate_multiple_operations(processed_data)
+            
+            return result
+        except Exception as service_error:
+            logger.error(f"Service operation failed: {service_error}", exc_info=True)
+            raise ServiceError(f"Operation failed: {str(service_error)}")
+    
+    def _validate_complex_business_rules(self, data: SomeModel) -> SomeModel:
+        """Private helper for complex validation"""
+        # Implementation here
+        pass
+```
 
 #### Docker/Infrastructure
 - **Prefer Alpine images** for size and security advantages
@@ -352,6 +556,8 @@ def _build_subscription_cache_key(user_id: str, subscription_id: str) -> str:
 ### Code Review Checklist
 - [ ] **Code Quality**: Uses meaningful variable names, no single letters or abbreviations
 - [ ] **Readability**: Code is simple and self-documenting, no unnecessary complexity
+- [ ] **File Size**: All files are under 100 lines, split into focused modules if needed
+- [ ] **Layer Separation**: Heavy logic is in Services, controllers are thin, models are lightweight
 - [ ] **Design Patterns**: Follows SOLID principles and appropriate patterns (Factory, Strategy, etc.)
 - [ ] **Context Clarity**: All requirements were clear before implementation started
 - [ ] **Error Handling**: Proper exception handling with meaningful messages
@@ -363,6 +569,7 @@ def _build_subscription_cache_key(user_id: str, subscription_id: str) -> str:
 - [ ] **Performance**: No obvious bottlenecks or inefficiencies
 - [ ] **Security**: No secrets exposed, proper input validation
 - [ ] **Async Processing**: Heavy operations are properly offloaded to Celery workers
+- [ ] **Services Architecture**: Business logic lives in dedicated service classes, not in routes/models/repos
 
 ## 12. Communication Standards
 
@@ -405,9 +612,11 @@ def _build_subscription_cache_key(user_id: str, subscription_id: str) -> str:
 5. **Self-Documenting Code**: Writing code that explains itself without comments
 6. **Quality over Speed**: Taking time to write maintainable, testable code
 7. **Performance-First Architecture**: Offloading heavy operations to background workers to maintain responsiveness
+8. **File Size Discipline**: Keeping all files under 100 lines by splitting into focused, single-responsibility modules
+9. **Services Layer Architecture**: Placing all heavy business logic in dedicated service classes, keeping controllers thin and models lightweight
 
 **These standards ensure high-quality, maintainable, secure, and well-documented code that follows industry best practices and project-specific requirements.**
 
 **Last Updated**: 2025-08-21  
-**Version**: 2.0  
-**Status**: Active - Enhanced with Code Quality Focus
+**Version**: 2.1  
+**Status**: Active - Enhanced with Services Layer Architecture and File Size Guidelines
