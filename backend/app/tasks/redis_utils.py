@@ -4,6 +4,7 @@ Redis connection and testing tasks.
 
 import logging
 from app.core.celery import celery_app
+from app.core.config import settings
 from .redis_client import (
     _create_redis_client,
     _perform_redis_connection_test,
@@ -14,7 +15,10 @@ from .redis_client import (
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task
+@celery_app.task(
+    time_limit=settings.REDIS_TASK_TIME_LIMIT,
+    soft_time_limit=settings.REDIS_TASK_SOFT_TIME_LIMIT
+)
 def add_numbers(x: int, y: int):
     """
     Simple task to add two numbers.
@@ -32,7 +36,10 @@ def add_numbers(x: int, y: int):
     return result
 
 
-@celery_app.task
+@celery_app.task(
+    time_limit=settings.REDIS_TASK_TIME_LIMIT,
+    soft_time_limit=settings.REDIS_TASK_SOFT_TIME_LIMIT
+)
 def test_redis_connection():
     """
     Test task to verify Redis connection is working.

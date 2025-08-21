@@ -4,13 +4,18 @@ File processing tasks for I/O-bound operations.
 
 import logging
 from app.core.celery import celery_app
+from app.core.config import settings
 from .file_utils import _update_file_processing_progress, _finalize_file_processing_result
 from .file_validation import _validate_file_for_processing, _process_file_in_chunks
 
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(bind=True)
+@celery_app.task(
+    bind=True,
+    time_limit=settings.FILE_PROCESSING_TASK_TIME_LIMIT,
+    soft_time_limit=settings.FILE_PROCESSING_TASK_SOFT_TIME_LIMIT
+)
 def process_large_file_upload_task(
     self, file_path: str, processing_options: dict = None
 ):
