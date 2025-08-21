@@ -4,14 +4,12 @@ from pydantic.networks import EmailStr
 from app.api.deps import get_current_active_superuser
 from app.models import Message
 from app.utils import generate_test_email, send_email
-from .health.redis import router as redis_health_router
-from .health.celery import router as celery_health_router
+from .health import router as health_router
 
 router = APIRouter(prefix="/utils", tags=["utils"])
 
 # Include health check endpoints
-router.include_router(redis_health_router)
-router.include_router(celery_health_router)
+router.include_router(health_router)
 
 
 @router.post(

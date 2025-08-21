@@ -19,17 +19,16 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
     task_track_started=True,
-    task_time_limit=30 * 60,  # 30 minutes
-    task_soft_time_limit=25 * 60,  # 25 minutes
-    worker_prefetch_multiplier=1,
-    worker_max_tasks_per_child=1000,
+    task_time_limit=settings.CELERY_TASK_TIME_LIMIT,
+    task_soft_time_limit=settings.CELERY_TASK_SOFT_TIME_LIMIT,
+    worker_prefetch_multiplier=settings.CELERY_WORKER_PREFETCH_MULTIPLIER,
+    worker_max_tasks_per_child=settings.CELERY_WORKER_MAX_TASKS_PER_CHILD,
     # Auto-discover tasks from all installed apps
     include=[
         "app.tasks.computation",
-        "app.tasks.file_processing",
+        "app.tasks.file_processing", 
         "app.tasks.redis_utils",
         "app.tasks.example_tasks",  # Legacy compatibility
-        # Add more task modules here as needed
     ],
 )
 

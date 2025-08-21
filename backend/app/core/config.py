@@ -59,6 +59,12 @@ class Settings(BaseSettings):
 
     # Redis configuration for Celery and caching
     REDIS_URL: str = "redis://localhost:6379"
+    
+    # Celery configuration
+    CELERY_TASK_TIME_LIMIT: int = 30 * 60  # 30 minutes
+    CELERY_TASK_SOFT_TIME_LIMIT: int = 25 * 60  # 25 minutes
+    CELERY_WORKER_PREFETCH_MULTIPLIER: int = 1
+    CELERY_WORKER_MAX_TASKS_PER_CHILD: int = 1000
 
     @computed_field  # type: ignore[prop-decorator]
     @property
