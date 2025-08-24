@@ -1,0 +1,56 @@
+graph TB
+    %% External Services
+    Clerk[Clerk Authentication Service]
+    Frontend[Frontend Application]
+
+    %% Main Application Components
+    subgraph "Backend Application"
+        API[FastAPI Routes]
+        ClerkService[ClerkService]
+        UserSyncService[UserSyncService]
+        WebhookProcessor[WebhookProcessor]
+
+        %% Background Processing
+        subgraph "Background Tasks"
+            Celery[Celery Workers]
+            Redis[(Redis Queue)]
+        end
+
+        %% Data Layer
+        subgraph "Data Layer"
+            UserModel[(User Model)]
+            WebhookModel[(WebhookEvent Model)]
+            DB[(PostgreSQL Database)]
+        end
+    end
+
+    %% Connections
+    Frontend -.->|Auth Requests| Clerk
+    Frontend -->|API Calls| API
+    Clerk -.->|Webhooks| WebhookProcessor
+
+    API --> ClerkService
+    API --> UserSyncService
+
+    ClerkService -.->|API Calls| Clerk
+    UserSyncService --> UserModel
+    UserSyncService --> DB
+
+    WebhookProcessor --> Redis
+    WebhookProcessor --> WebhookModel
+    Redis --> Celery
+    Celery --> UserSyncService
+
+    UserModel --> DB
+    WebhookModel --> DB
+
+    %% Styling
+    classDef external fill:#e1f5fe
+    classDef service fill:#f3e5f5
+    classDef data fill:#e8f5e8
+    classDef queue fill:#fff3e0
+
+    class Clerk,Frontend external
+    class ClerkService,UserSyncService,WebhookProcessor service
+    class UserModel,WebhookModel,DB data
+    class Redis,Celery queue

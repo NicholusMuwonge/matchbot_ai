@@ -1,0 +1,110 @@
+{
+  "summary": {
+    "total": 14,
+    "passed": 6,
+    "failed": 4,
+    "skipped": 4,
+    "success_rate": 42.857142857142854
+  },
+  "results": [
+    {
+      "test": "env_var_clerk_secret_key",
+      "status": "FAIL",
+      "message": "CLERK_SECRET_KEY is not configured",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.306403"
+    },
+    {
+      "test": "env_var_clerk_publishable_key",
+      "status": "FAIL",
+      "message": "CLERK_PUBLISHABLE_KEY is not configured",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.306417"
+    },
+    {
+      "test": "env_var_clerk_webhook_secret",
+      "status": "FAIL",
+      "message": "CLERK_WEBHOOK_SECRET is not configured",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.306421"
+    },
+    {
+      "test": "database_connection",
+      "status": "PASS",
+      "message": "Database connection successful",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.324589"
+    },
+    {
+      "test": "clerk_service_init",
+      "status": "FAIL",
+      "message": "Failed to initialize Clerk service",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.324606"
+    },
+    {
+      "test": "session_validation",
+      "status": "SKIP",
+      "message": "Clerk service not available",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.324610"
+    },
+    {
+      "test": "user_operations",
+      "status": "SKIP",
+      "message": "Clerk service not available",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.324613"
+    },
+    {
+      "test": "webhook_signature",
+      "status": "SKIP",
+      "message": "Clerk service not available",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.324616"
+    },
+    {
+      "test": "user_sync_service",
+      "status": "SKIP",
+      "message": "User sync service not available",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.324619"
+    },
+    {
+      "test": "user_model",
+      "status": "PASS",
+      "message": "User model accessible, found 0 users",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.325231"
+    },
+    {
+      "test": "webhook_model",
+      "status": "PASS",
+      "message": "WebhookEvent model accessible, found 0 events",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.326966"
+    },
+    {
+      "test": "webhook_state_machine",
+      "status": "PASS",
+      "message": "State machine validation: 6/6 tests passed",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.327138"
+    },
+    {
+      "test": "task_imports",
+      "status": "PASS",
+      "message": "Background task imports successful",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.372984"
+    },
+    {
+      "test": "webhook_endpoints",
+      "status": "PASS",
+      "message": "Webhook endpoints module exists",
+      "details": {},
+      "timestamp": "2025-08-23T09:42:34.373364"
+    }
+  ],
+  "generated_at": "2025-08-23T09:42:34.373596"
+}

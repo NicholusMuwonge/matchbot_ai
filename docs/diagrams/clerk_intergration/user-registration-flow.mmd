@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Clerk
+    participant Backend
+    participant WebhookProcessor
+    participant Celery
+    participant Database
+
+    User->>Frontend: Sign up
+    Frontend->>Clerk: Create user account
+    Clerk->>Frontend: User created (with ID)
+    Frontend->>User: Registration successful
+
+    Note over Clerk,Backend: Webhook Flow (Async)
+    Clerk->>Backend: POST /webhooks/clerk (user.created)
+    Backend->>WebhookProcessor: Process webhook
+    WebhookProcessor->>WebhookProcessor: Verify signature
+    WebhookProcessor->>Database: Create webhook event record
+    WebhookProcessor->>Celery: Schedule user sync task
+    WebhookProcessor->>Backend: Return 200 OK
+
+    Note over Celery,Database: Background Processing
+    Celery->>UserSyncService: Execute sync task
+    UserSyncService->>Database: Create/update local user
+    UserSyncService->>Database: Update webhook event status

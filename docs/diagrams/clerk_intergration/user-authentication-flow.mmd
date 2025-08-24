@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Clerk
+    participant Backend
+    participant ClerkService
+    participant Database
+
+    User->>Frontend: Login
+    Frontend->>Clerk: Authenticate user
+    Clerk->>Frontend: Return session token
+
+    User->>Frontend: Make API request
+    Frontend->>Backend: API call with session token
+    Backend->>ClerkService: Validate session token
+    ClerkService->>Clerk: Verify token
+    Clerk->>ClerkService: Token validation result
+    ClerkService->>Backend: User authentication status
+
+    alt Valid token
+        Backend->>Database: Get/create local user
+        Database->>Backend: User data
+        Backend->>Frontend: API response
+        Frontend->>User: Show content
+    else Invalid token
+        Backend->>Frontend: 401 Unauthorized
+        Frontend->>User: Redirect to login
+    end

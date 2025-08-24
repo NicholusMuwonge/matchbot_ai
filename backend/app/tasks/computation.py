@@ -4,7 +4,9 @@ Heavy computation tasks for CPU-intensive operations.
 
 import logging
 import time
+
 from celery import current_task
+
 from app.core.celery import celery_app
 from app.core.config import settings
 

@@ -26,7 +26,7 @@ celery_app.conf.update(
     # Auto-discover tasks from all installed apps
     include=[
         "app.tasks.computation",
-        "app.tasks.file_processing", 
+        "app.tasks.file_processing",
         "app.tasks.redis_utils",
         "app.tasks.example_tasks",  # Legacy compatibility
     ],

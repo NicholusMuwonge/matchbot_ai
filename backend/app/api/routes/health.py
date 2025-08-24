@@ -22,7 +22,7 @@ def check_redis_health():
         redis_client.set("health_check", "ok", ex=60)
         result = redis_client.get("health_check")
         redis_client.delete("health_check")
-        
+
         return {
             "status": "healthy" if result == "ok" else "unhealthy",
             "service": "redis",
@@ -34,7 +34,7 @@ def check_redis_health():
             status_code=503,
             detail={
                 "status": "unhealthy",
-                "service": "redis", 
+                "service": "redis",
                 "error": str(error),
                 "timestamp": datetime.utcnow().isoformat(),
             }
@@ -46,10 +46,10 @@ def check_celery_health():
     """Simple Celery health check."""
     try:
         from app.core.celery import celery_app
-        
+
         inspector = celery_app.control.inspect()
         active_workers = inspector.active()
-        
+
         if not active_workers:
             raise HTTPException(
                 status_code=503,
@@ -60,7 +60,7 @@ def check_celery_health():
                     "timestamp": datetime.utcnow().isoformat(),
                 }
             )
-        
+
         worker_count = len(active_workers)
         return {
             "status": "healthy",
@@ -68,7 +68,7 @@ def check_celery_health():
             "workers": worker_count,
             "timestamp": datetime.utcnow().isoformat(),
         }
-        
+
     except HTTPException:
         raise
     except Exception as error:

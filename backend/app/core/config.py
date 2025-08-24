@@ -6,6 +6,7 @@ from pydantic import (
     AnyUrl,
     BeforeValidator,
     EmailStr,
+    Field,
     HttpUrl,
     PostgresDsn,
     computed_field,
@@ -26,14 +27,12 @@ def parse_cors(v: Any) -> list[str] | str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        # Use top level .env file (one level above ./backend/)
         env_file="../.env",
         env_ignore_empty=True,
         extra="ignore",
     )
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = secrets.token_urlsafe(32)
-    # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     FRONTEND_HOST: str = "http://localhost:5173"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
@@ -59,22 +58,33 @@ class Settings(BaseSettings):
 
     # Redis configuration for Celery and caching
     REDIS_URL: str = "redis://localhost:6379"
-    
+
     # Default Celery configuration (fallbacks)
     CELERY_TASK_TIME_LIMIT: int = 30 * 60  # 30 minutes default
     CELERY_TASK_SOFT_TIME_LIMIT: int = 25 * 60  # 25 minutes default
     CELERY_WORKER_PREFETCH_MULTIPLIER: int = 1
     CELERY_WORKER_MAX_TASKS_PER_CHILD: int = 1000
-    
+
     # Task-specific time limits (with fallbacks to defaults)
     COMPUTATION_TASK_TIME_LIMIT: int = 60 * 60  # 1 hour for heavy computation
     COMPUTATION_TASK_SOFT_TIME_LIMIT: int = 55 * 60  # 55 minutes
-    
+
     FILE_PROCESSING_TASK_TIME_LIMIT: int = 45 * 60  # 45 minutes for file processing
     FILE_PROCESSING_TASK_SOFT_TIME_LIMIT: int = 40 * 60  # 40 minutes
-    
+
     REDIS_TASK_TIME_LIMIT: int = 5 * 60  # 5 minutes for simple Redis operations
     REDIS_TASK_SOFT_TIME_LIMIT: int = 4 * 60  # 4 minutes
+
+    # Clerk Authentication Configuration
+    CLERK_SECRET_KEY: str = Field(
+        default="", description="Clerk secret key for API authentication"
+    )
+    CLERK_PUBLISHABLE_KEY: str = Field(
+        default="", description="Clerk publishable key for frontend"
+    )
+    CLERK_WEBHOOK_SECRET: str = Field(
+        default="", description="Clerk webhook secret for signature verification"
+    )
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -136,4 +146,4 @@ class Settings(BaseSettings):
         return self
 
 
-settings = Settings()  # type: ignore
+settings = Settings()

@@ -1,0 +1,47 @@
+erDiagram
+    USER {
+        uuid id PK
+        string email UK
+        string clerk_user_id UK "Nullable"
+        string auth_provider "local|clerk"
+        boolean is_synced
+        boolean email_verified
+        string first_name "Nullable"
+        string last_name "Nullable"
+        string full_name "Nullable"
+        string profile_image_url "Nullable"
+        datetime created_at
+        datetime last_login "Nullable"
+        string hashed_password
+        boolean is_active
+        boolean is_superuser
+    }
+
+    WEBHOOK_EVENT {
+        int id PK
+        string webhook_id UK
+        string event_type
+        enum status "pending|processing|success|failed|invalid|ignored"
+        datetime processed_at "Nullable"
+        int retry_count
+        int max_retries
+        datetime next_retry_at "Nullable"
+        string error_message "Nullable"
+        json error_details "Nullable"
+        json raw_data
+        json processed_data "Nullable"
+        string source_ip "Nullable"
+        string user_agent "Nullable"
+        datetime created_at
+        datetime updated_at "Nullable"
+    }
+
+    ITEM {
+        uuid id PK
+        uuid owner_id FK
+        string title
+        string description "Nullable"
+    }
+
+    USER ||--o{ ITEM : owns
+    USER ||--o{ WEBHOOK_EVENT : "processed_for"

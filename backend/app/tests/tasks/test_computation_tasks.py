@@ -2,8 +2,9 @@
 Tests for computation-heavy Celery tasks.
 """
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 
 class TestComputationTasks:

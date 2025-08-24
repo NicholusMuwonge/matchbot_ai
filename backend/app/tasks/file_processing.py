@@ -3,10 +3,15 @@ File processing tasks for I/O-bound operations.
 """
 
 import logging
+
 from app.core.celery import celery_app
 from app.core.config import settings
-from .file_utils import _update_file_processing_progress, _finalize_file_processing_result
-from .file_validation import _validate_file_for_processing, _process_file_in_chunks
+
+from .file_utils import (
+    _finalize_file_processing_result,
+    _update_file_processing_progress,
+)
+from .file_validation import _process_file_in_chunks, _validate_file_for_processing
 
 logger = logging.getLogger(__name__)
 

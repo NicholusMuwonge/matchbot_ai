@@ -1,0 +1,37 @@
+graph TD
+    TaskStart([Task Execution Starts]) --> TryExecute[Execute Task]
+
+    TryExecute --> Success{Success?}
+    Success -->|Yes| TaskComplete[Mark as Success]
+    Success -->|No| CheckError{Error Type?}
+
+    CheckError -->|ClerkError| IsRetryable{Retryable?}
+    CheckError -->|NetworkError| IsRetryable
+    CheckError -->|UserSyncError| IsRetryable
+    CheckError -->|ValidationError| NotRetryable[Mark as Failed]
+    CheckError -->|UnknownError| NotRetryable
+
+    IsRetryable -->|Yes| CheckRetryCount{Retry Count < Max?}
+    IsRetryable -->|No| NotRetryable
+
+    CheckRetryCount -->|Yes| CalculateDelay[Calculate Backoff Delay]
+    CheckRetryCount -->|No| MaxRetriesReached[Mark as Failed - Max Retries]
+
+    CalculateDelay --> ScheduleRetry[Schedule Retry Task]
+    ScheduleRetry --> WaitDelay[Wait for Delay Period]
+    WaitDelay --> TryExecute
+
+    TaskComplete --> End([Task Complete])
+    NotRetryable --> End
+    MaxRetriesReached --> End
+
+    %% Styling
+    classDef success fill:#c8e6c9
+    classDef error fill:#ffcdd2
+    classDef retry fill:#fff3e0
+    classDef decision fill:#e1f5fe
+
+    class TaskComplete,End success
+    class NotRetryable,MaxRetriesReached error
+    class CalculateDelay,ScheduleRetry,WaitDelay retry
+    class Success,CheckError,IsRetryable,CheckRetryCount decision

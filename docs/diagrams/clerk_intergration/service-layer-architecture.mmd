@@ -1,0 +1,67 @@
+graph TB
+    subgraph "API Layer"
+        UserRoutes[User Routes]
+        AuthRoutes[Auth Routes]
+        WebhookRoutes[Webhook Routes]
+    end
+
+    subgraph "Service Layer"
+        ClerkService[ClerkService<br/>- validate_session_token<br/>- get_user<br/>- list_users<br/>- verify_webhook_signature]
+        UserSyncService[UserSyncService]
+    end
+
+    subgraph "Processing Layer"
+        WebhookProcessor[Webhook Processor]
+
+        subgraph "Background Tasks"
+            SyncUserTask[Sync User Task]
+            FetchUserTask[Fetch User Task]
+            DeleteUserTask[Delete User Task]
+        end
+    end
+
+    subgraph "Data Access Layer"
+        UserCRUD[User CRUD]
+        WebhookCRUD[Webhook CRUD]
+        Database[(Database)]
+    end
+
+    %% API to Service connections
+    UserRoutes --> ClerkService
+    UserRoutes --> UserSyncService
+    AuthRoutes --> ClerkService
+    WebhookRoutes --> WebhookProcessor
+
+    %% Processing connections
+    WebhookProcessor --> ClerkService
+    WebhookProcessor --> SyncUserTask
+    WebhookProcessor --> FetchUserTask
+    WebhookProcessor --> DeleteUserTask
+
+    SyncUserTask --> UserSyncService
+    FetchUserTask --> UserSyncService
+    DeleteUserTask --> UserSyncService
+
+    UserSyncService --> ClerkService
+
+    %% Data access
+    UserSyncService --> UserCRUD
+    WebhookProcessor --> WebhookCRUD
+    UserCRUD --> Database
+    WebhookCRUD --> Database
+
+    %% External connections
+    ClerkService -.->|SDK| ClerkAPI[Clerk Backend API<br/>- sessions.get<br/>- users.get<br/>- users.list]
+
+    %% Styling
+    classDef api fill:#e3f2fd
+    classDef service fill:#f3e5f5
+    classDef processing fill:#fff3e0
+    classDef data fill:#e8f5e8
+    classDef external fill:#ffebee
+
+    class UserRoutes,AuthRoutes,WebhookRoutes api
+    class ClerkService,UserSyncService service
+    class WebhookProcessor,SyncUserTask,FetchUserTask,DeleteUserTask processing
+    class UserCRUD,WebhookCRUD,Database data
+    class ClerkAPI external
