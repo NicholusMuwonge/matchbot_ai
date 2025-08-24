@@ -77,20 +77,20 @@ class TestAuthRoutes:
         """Test successful current user retrieval"""
         with patch("app.api.routes.auth.ClerkService") as mock_clerk_service:
             with patch("app.api.routes.auth.UserSyncService") as mock_sync_service:
-                # Mock Clerk service
                 mock_clerk = MagicMock()
                 mock_clerk_service.return_value = mock_clerk
                 mock_clerk.validate_session_token.return_value = {"user_id": "user_123"}
 
-                # Mock sync service with AsyncMock for async methods
                 mock_sync = MagicMock()
                 mock_sync_service.return_value = mock_sync
-                mock_sync.fetch_and_sync_user = AsyncMock(return_value={
-                    "status": "updated",
-                    "user_id": "1",
-                    "clerk_user_id": "user_123",
-                    "action": "user_updated",
-                })
+                mock_sync.fetch_and_sync_user = AsyncMock(
+                    return_value={
+                        "status": "updated",
+                        "user_id": "1",
+                        "clerk_user_id": "user_123",
+                        "action": "user_updated",
+                    }
+                )
 
                 response = client.get(
                     "/api/v1/auth/me", headers={"authorization": "Bearer sess_test123"}
@@ -111,20 +111,20 @@ class TestAuthRoutes:
         """Test successful user sync"""
         with patch("app.api.routes.auth.ClerkService") as mock_clerk_service:
             with patch("app.api.routes.auth.UserSyncService") as mock_sync_service:
-                # Mock Clerk service
                 mock_clerk = MagicMock()
                 mock_clerk_service.return_value = mock_clerk
                 mock_clerk.validate_session_token.return_value = {"user_id": "user_123"}
 
-                # Mock sync service with AsyncMock
                 mock_sync = MagicMock()
                 mock_sync_service.return_value = mock_sync
-                mock_sync.fetch_and_sync_user = AsyncMock(return_value={
-                    "status": "created",
-                    "user_id": "1",
-                    "clerk_user_id": "user_123",
-                    "action": "user_created",
-                })
+                mock_sync.fetch_and_sync_user = AsyncMock(
+                    return_value={
+                        "status": "created",
+                        "user_id": "1",
+                        "clerk_user_id": "user_123",
+                        "action": "user_created",
+                    }
+                )
 
                 response = client.post(
                     "/api/v1/auth/sync-user/user_123",
@@ -141,15 +141,15 @@ class TestAuthRoutes:
         """Test user sync when user not found"""
         with patch("app.api.routes.auth.ClerkService") as mock_clerk_service:
             with patch("app.api.routes.auth.UserSyncService") as mock_sync_service:
-                # Mock Clerk service
                 mock_clerk = MagicMock()
                 mock_clerk_service.return_value = mock_clerk
                 mock_clerk.validate_session_token.return_value = {"user_id": "user_123"}
 
-                # Mock sync service with AsyncMock
                 mock_sync = MagicMock()
                 mock_sync_service.return_value = mock_sync
-                mock_sync.fetch_and_sync_user = AsyncMock(return_value={"status": "not_found"})
+                mock_sync.fetch_and_sync_user = AsyncMock(
+                    return_value={"status": "not_found"}
+                )
 
                 response = client.post(
                     "/api/v1/auth/sync-user/user_123",
@@ -171,12 +171,14 @@ class TestAuthRoutes:
                 # Mock sync service with AsyncMock
                 mock_sync = MagicMock()
                 mock_sync_service.return_value = mock_sync
-                mock_sync.sync_user_by_email = AsyncMock(return_value={
-                    "status": "created",
-                    "user_id": "1",
-                    "clerk_user_id": "user_123",
-                    "action": "user_created",
-                })
+                mock_sync.sync_user_by_email = AsyncMock(
+                    return_value={
+                        "status": "created",
+                        "user_id": "1",
+                        "clerk_user_id": "user_123",
+                        "action": "user_created",
+                    }
+                )
 
                 response = client.post(
                     "/api/v1/auth/sync-user-by-email?email=test@example.com",
@@ -215,12 +217,10 @@ class TestAuthRoutes:
         """Test get sync statistics"""
         with patch("app.api.routes.auth.ClerkService") as mock_clerk_service:
             with patch("app.api.routes.auth.UserSyncService") as mock_sync_service:
-                # Mock Clerk service
                 mock_clerk = MagicMock()
                 mock_clerk_service.return_value = mock_clerk
                 mock_clerk.validate_session_token.return_value = {"user_id": "user_123"}
 
-                # Mock sync service
                 mock_sync = MagicMock()
                 mock_sync_service.return_value = mock_sync
                 mock_sync.get_sync_stats.return_value = {

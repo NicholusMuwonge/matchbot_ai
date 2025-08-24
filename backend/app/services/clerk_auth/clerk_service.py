@@ -37,14 +37,12 @@ class ClerkService:
                 "CLERK_SECRET_KEY is required for production"
             )
 
-        # Configure logging for Clerk SDK
         self.logger = logging.getLogger("clerk_service")
-        
-        # Set up debug logging if enabled
+
         debug_enabled = (
-            settings.ENVIRONMENT == "local" or 
-            settings.CLERK_DEBUG or 
-            os.getenv("CLERK_DEBUG", "").lower() == "true"
+            settings.ENVIRONMENT == "local"
+            or settings.CLERK_DEBUG
+            or os.getenv("CLERK_DEBUG", "").lower() == "true"
         )
         if debug_enabled:
             logging.basicConfig(level=logging.DEBUG)
@@ -54,18 +52,18 @@ class ClerkService:
         else:
             clerk_logger = logging.getLogger("clerk_backend_api")
             clerk_logger.setLevel(logging.WARNING)
-            
-        # Initialize Clerk client with debug logger
+
         self.client = Clerk(
-            bearer_auth=api_key,
-            debug_logger=clerk_logger if debug_enabled else None
+            bearer_auth=api_key, debug_logger=clerk_logger if debug_enabled else None
         )
-        
+
         self.publishable_key = (
             os.getenv("CLERK_PUBLISHABLE_KEY") or settings.CLERK_PUBLISHABLE_KEY
         )
-        
-        self.logger.info(f"ClerkService initialized for environment: {settings.ENVIRONMENT}")
+
+        self.logger.info(
+            f"ClerkService initialized for environment: {settings.ENVIRONMENT}"
+        )
 
     def validate_session_token(self, token: str) -> dict[str, Any]:
         """
@@ -75,7 +73,7 @@ class ClerkService:
             raise ClerkAuthenticationError("Session token is required")
 
         self.logger.debug(f"Validating session token: {token[:10]}...")
-        
+
         try:
             session: Session = self.client.sessions.get(session_id=token)
 
@@ -83,13 +81,17 @@ class ClerkService:
                 raise ClerkAuthenticationError("Session not found")
 
             if session.status.value != "active":  # Status is an enum
-                self.logger.warning(f"Session validation failed - status: {session.status.value}")
+                self.logger.warning(
+                    f"Session validation failed - status: {session.status.value}"
+                )
                 raise ClerkAuthenticationError(
                     f"Session is not active: {session.status.value}"
                 )
 
-            self.logger.debug(f"Session validated successfully for user: {session.user_id}")
-            
+            self.logger.debug(
+                f"Session validated successfully for user: {session.user_id}"
+            )
+
             return {
                 "valid": True,
                 "session_id": session.id,
@@ -115,28 +117,27 @@ class ClerkService:
     def get_user(self, user_id: str) -> dict[str, Any] | None:
         """Get user data from Clerk API"""
         self.logger.debug(f"Fetching user data for user_id: {user_id}")
-        
+
         try:
-            # Use users.get() with user_id - this is the actual method
             user: User = self.client.users.get(user_id=user_id)
 
             if not user:
                 self.logger.debug(f"User not found: {user_id}")
                 return None
 
-            # Extract primary email from email_addresses list (actual SDK structure)
             primary_email = None
             if user.email_addresses:
                 for email_obj in user.email_addresses:
                     if email_obj.id == user.primary_email_address_id:
                         primary_email = email_obj.email_address
                         break
-                # Fallback to first email if no primary found
                 if not primary_email and user.email_addresses:
                     primary_email = user.email_addresses[0].email_address
 
-            self.logger.debug(f"Successfully fetched user data for: {user_id} ({primary_email})")
-            
+            self.logger.debug(
+                f"Successfully fetched user data for: {user_id} ({primary_email})"
+            )
+
             return {
                 "id": user.id,
                 "email": primary_email,
@@ -162,7 +163,7 @@ class ClerkService:
     def list_users(self, email: str | None = None, limit: int = 10) -> dict[str, Any]:
         """List users from Clerk API"""
         self.logger.debug(f"Listing users with email filter: {email}, limit: {limit}")
-        
+
         try:
             # Create request object as required by SDK
             request = GetUserListRequest(
@@ -171,11 +172,9 @@ class ClerkService:
                 order_by="-created_at",  # Default ordering
             )
 
-            # Add email filter if provided
             if email:
                 request.email_address_query = email
 
-            # Use users.list() with request object - this is the actual method
             users_list: list[User] = self.client.users.list(request=request)
 
             if not users_list:

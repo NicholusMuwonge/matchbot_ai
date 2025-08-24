@@ -1,19 +1,10 @@
 """
-Main models module - imports all models from the models package.
-This file is kept for backward compatibility and to maintain existing import paths.
+Models package for the application.
 """
 
-# Import all models from the organized models package
-from app.models.base import Message, NewPassword, Token, TokenPayload
-from app.models.item import (
-    Item,
-    ItemBase,
-    ItemCreate,
-    ItemPublic,
-    ItemsPublic,
-    ItemUpdate,
-)
-from app.models.user import (
+from .base import Message, NewPassword, Token, TokenPayload
+from .item import Item, ItemBase, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate
+from .user import (
     UpdatePassword,
     User,
     UserBase,
@@ -24,14 +15,13 @@ from app.models.user import (
     UserUpdate,
     UserUpdateMe,
 )
-from app.models.webhook import (
+from .webhook import (
     WebhookEvent,
     WebhookStateMachine,
     WebhookStatus,
     WebhookTransitionError,
 )
 
-# Export all models for backward compatibility
 __all__ = [
     # Base models
     "Message",

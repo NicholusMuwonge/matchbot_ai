@@ -2,7 +2,7 @@
 Tests for webhook API routes
 """
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -34,10 +34,16 @@ class TestWebhookRoutes:
 
     def test_handle_clerk_webhook_success(self, client, db):
         """Test successful webhook handling"""
-        with patch("app.api.routes.webhooks.process_clerk_webhook") as mock_process:
+        import uuid
+
+        webhook_id = f"msg_test_{uuid.uuid4().hex[:8]}"
+
+        with patch(
+            "app.api.routes.webhooks.process_clerk_webhook", new_callable=AsyncMock
+        ) as mock_process:
             mock_process.return_value = {
                 "status": "accepted",
-                "webhook_id": "msg_test123",
+                "webhook_id": webhook_id,
                 "task_id": "task_456",
                 "message": "User sync scheduled for background processing",
             }
@@ -48,7 +54,7 @@ class TestWebhookRoutes:
             }
 
             headers = {
-                "svix-id": "msg_test123",
+                "svix-id": webhook_id,
                 "svix-timestamp": "1234567890",
                 "svix-signature": "v1,test_signature",
             }
@@ -60,7 +66,7 @@ class TestWebhookRoutes:
             assert response.status_code == 200
             data = response.json()
             assert data["status"] == "accepted"
-            assert data["webhook_id"] == "msg_test123"
+            assert data["webhook_id"] == webhook_id
             assert data["task_id"] == "task_456"
 
     def test_get_webhook_status_not_found(self, client, db):
@@ -72,11 +78,14 @@ class TestWebhookRoutes:
 
     def test_get_webhook_status_success(self, client, db):
         """Test successful webhook status retrieval"""
+        import uuid
         from datetime import datetime
+
+        webhook_id = f"msg_test_{uuid.uuid4().hex[:8]}"
 
         # Create a webhook event in the database
         webhook_event = WebhookEvent(
-            webhook_id="msg_test123",
+            webhook_id=webhook_id,
             event_type="user.created",
             status=WebhookStatus.SUCCESS,
             raw_data={"type": "user.created", "data": {"id": "user_123"}},
@@ -88,22 +97,25 @@ class TestWebhookRoutes:
         db.add(webhook_event)
         db.commit()
 
-        response = client.get("/api/v1/webhooks/status/msg_test123")
+        response = client.get(f"/api/v1/webhooks/status/{webhook_id}")
 
         assert response.status_code == 200
         data = response.json()
-        assert data["webhook_id"] == "msg_test123"
+        assert data["webhook_id"] == webhook_id
         assert data["status"] == "success"
         assert data["event_type"] == "user.created"
         assert data["retry_count"] == 0
 
     def test_get_failed_webhooks(self, client, db):
         """Test getting list of failed webhooks"""
+        import uuid
         from datetime import datetime
+
+        webhook_id = f"msg_failed_{uuid.uuid4().hex[:8]}"
 
         # Create a failed webhook event
         webhook_event = WebhookEvent(
-            webhook_id="msg_failed123",
+            webhook_id=webhook_id,
             event_type="user.created",
             status=WebhookStatus.FAILED,
             raw_data={"type": "user.created", "data": {"id": "user_123"}},
@@ -120,7 +132,7 @@ class TestWebhookRoutes:
         assert response.status_code == 200
         data = response.json()
         assert data["count"] >= 1
-        assert any(w["webhook_id"] == "msg_failed123" for w in data["failed_webhooks"])
+        assert any(w["webhook_id"] == webhook_id for w in data["failed_webhooks"])
 
     def test_retry_failed_webhook_not_found(self, client, db):
         """Test retry webhook that doesn't exist"""
@@ -131,11 +143,14 @@ class TestWebhookRoutes:
 
     def test_retry_failed_webhook_wrong_status(self, client, db):
         """Test retry webhook that is not in failed status"""
+        import uuid
         from datetime import datetime
+
+        webhook_id = f"msg_success_{uuid.uuid4().hex[:8]}"
 
         # Create a successful webhook event
         webhook_event = WebhookEvent(
-            webhook_id="msg_success123",
+            webhook_id=webhook_id,
             event_type="user.created",
             status=WebhookStatus.SUCCESS,
             raw_data={"type": "user.created", "data": {"id": "user_123"}},
@@ -147,18 +162,21 @@ class TestWebhookRoutes:
         db.add(webhook_event)
         db.commit()
 
-        response = client.post("/api/v1/webhooks/retry/msg_success123")
+        response = client.post(f"/api/v1/webhooks/retry/{webhook_id}")
 
         assert response.status_code == 400
         assert "can only retry failed webhooks" in response.json()["detail"]
 
     def test_retry_failed_webhook_max_retries(self, client, db):
         """Test retry webhook that has reached max retries"""
+        import uuid
         from datetime import datetime
+
+        webhook_id = f"msg_maxretries_{uuid.uuid4().hex[:8]}"
 
         # Create a webhook that has reached max retries
         webhook_event = WebhookEvent(
-            webhook_id="msg_maxretries123",
+            webhook_id=webhook_id,
             event_type="user.created",
             status=WebhookStatus.FAILED,
             raw_data={"type": "user.created", "data": {"id": "user_123"}},
@@ -171,18 +189,21 @@ class TestWebhookRoutes:
         db.add(webhook_event)
         db.commit()
 
-        response = client.post("/api/v1/webhooks/retry/msg_maxretries123")
+        response = client.post(f"/api/v1/webhooks/retry/{webhook_id}")
 
         assert response.status_code == 400
         assert "reached maximum retries" in response.json()["detail"]
 
     def test_retry_failed_webhook_success(self, client, db):
         """Test successful webhook retry"""
+        import uuid
         from datetime import datetime
+
+        webhook_id = f"msg_retry_{uuid.uuid4().hex[:8]}"
 
         # Create a failed webhook event
         webhook_event = WebhookEvent(
-            webhook_id="msg_retry123",
+            webhook_id=webhook_id,
             event_type="user.created",
             status=WebhookStatus.FAILED,
             raw_data={"type": "user.created", "data": {"id": "user_123"}},
@@ -195,32 +216,36 @@ class TestWebhookRoutes:
         db.add(webhook_event)
         db.commit()
 
-        with patch("app.api.routes.webhooks.process_clerk_webhook") as mock_process:
+        with patch(
+            "app.webhooks.clerk_webhooks.process_clerk_webhook", new_callable=AsyncMock
+        ) as mock_process:
             mock_process.return_value = {
                 "status": "accepted",
-                "webhook_id": "msg_retry123",
+                "webhook_id": webhook_id,
                 "task_id": "task_retry456",
                 "message": "Retry successful",
             }
 
-            response = client.post("/api/v1/webhooks/retry/msg_retry123")
+            response = client.post(f"/api/v1/webhooks/retry/{webhook_id}")
 
             assert response.status_code == 200
             data = response.json()
             assert data["status"] == "accepted"
-            assert data["webhook_id"] == "msg_retry123"
+            assert data["webhook_id"] == webhook_id
             assert data["message"] == "Webhook retry initiated"
 
     def test_get_webhook_stats(self, client, db):
         """Test webhook statistics endpoint"""
+        import uuid
         from datetime import datetime
 
         # Create some webhook events for testing
         now = datetime.utcnow()
+        test_prefix = uuid.uuid4().hex[:8]
 
         # Successful webhook
         success_webhook = WebhookEvent(
-            webhook_id="msg_stats_success",
+            webhook_id=f"msg_stats_success_{test_prefix}",
             event_type="user.created",
             status=WebhookStatus.SUCCESS,
             raw_data={"type": "user.created", "data": {"id": "user_success"}},
@@ -231,7 +256,7 @@ class TestWebhookRoutes:
 
         # Failed webhook
         failed_webhook = WebhookEvent(
-            webhook_id="msg_stats_failed",
+            webhook_id=f"msg_stats_failed_{test_prefix}",
             event_type="user.updated",
             status=WebhookStatus.FAILED,
             raw_data={"type": "user.updated", "data": {"id": "user_failed"}},
@@ -242,7 +267,7 @@ class TestWebhookRoutes:
 
         # Processing webhook
         processing_webhook = WebhookEvent(
-            webhook_id="msg_stats_processing",
+            webhook_id=f"msg_stats_processing_{test_prefix}",
             event_type="user.deleted",
             status=WebhookStatus.PROCESSING,
             raw_data={"type": "user.deleted", "data": {"id": "user_processing"}},
