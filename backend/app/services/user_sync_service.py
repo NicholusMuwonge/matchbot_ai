@@ -153,7 +153,7 @@ class UserSyncService:
 
     async def fetch_and_sync_user(self, clerk_user_id: str) -> dict[str, Any]:
         try:
-            clerk_data = await self.clerk_service.get_user(clerk_user_id)
+            clerk_data = self.clerk_service.get_user(clerk_user_id)
 
             if not clerk_data:
                 raise UserSyncError(f"User not found in Clerk: {clerk_user_id}")
@@ -167,7 +167,7 @@ class UserSyncService:
     async def sync_user_by_email(self, email: str) -> dict[str, Any] | None:
         """Find user by email in Clerk and sync to local database"""
         try:
-            users_response = await self.clerk_service.list_users(email=email, limit=1)
+            users_response = self.clerk_service.list_users(email=email, limit=1)
             users = users_response.get("data", [])
 
             if not users:

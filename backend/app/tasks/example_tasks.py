@@ -12,5 +12,5 @@ __all__ = [
     "process_heavy_computation_task",
     "process_large_file_upload_task",
     "add_numbers",
-    "test_redis_connection"
+    "test_redis_connection",
 ]

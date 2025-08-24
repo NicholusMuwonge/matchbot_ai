@@ -13,7 +13,7 @@ class TestComputationTasks:
     def test_heavy_computation_task_progress(self):
         """Test heavy computation task reports progress correctly."""
         with (
-            patch("app.tasks.computation._process_computation_batch") as mock_batch,
+            patch("app.tasks.computation._process_computation_batch"),
             patch(
                 "app.tasks.computation._finalize_computation_result"
             ) as mock_finalize,

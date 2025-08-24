@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 @celery_app.task(
     bind=True,
     time_limit=settings.FILE_PROCESSING_TASK_TIME_LIMIT,
-    soft_time_limit=settings.FILE_PROCESSING_TASK_SOFT_TIME_LIMIT
+    soft_time_limit=settings.FILE_PROCESSING_TASK_SOFT_TIME_LIMIT,
 )
 def process_large_file_upload_task(
     self, file_path: str, processing_options: dict = None
@@ -70,5 +70,3 @@ def process_large_file_upload_task(
             exc_info=True,
         )
         raise self.retry(exc=file_processing_error, countdown=30, max_retries=2)
-
-

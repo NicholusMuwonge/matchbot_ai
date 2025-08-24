@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 @celery_app.task(
     bind=True,
     time_limit=settings.COMPUTATION_TASK_TIME_LIMIT,
-    soft_time_limit=settings.COMPUTATION_TASK_SOFT_TIME_LIMIT
+    soft_time_limit=settings.COMPUTATION_TASK_SOFT_TIME_LIMIT,
 )
 def process_heavy_computation_task(self, data_size: int = 10000):
     """

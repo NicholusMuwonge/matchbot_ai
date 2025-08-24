@@ -37,7 +37,7 @@ def check_redis_health():
                 "service": "redis",
                 "error": str(error),
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
 
@@ -58,7 +58,7 @@ def check_celery_health():
                     "service": "celery",
                     "message": "No active workers",
                     "timestamp": datetime.utcnow().isoformat(),
-                }
+                },
             )
 
         worker_count = len(active_workers)
@@ -80,7 +80,7 @@ def check_celery_health():
                 "service": "celery",
                 "error": str(error),
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
 

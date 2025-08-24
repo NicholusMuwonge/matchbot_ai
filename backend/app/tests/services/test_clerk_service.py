@@ -98,7 +98,7 @@ class TestClerkService:
         """Test service initialization with valid API keys"""
         with patch("app.services.clerk_auth.clerk_service.Clerk") as mock_clerk:
             with patch("os.getenv", return_value="sk_test_123"):
-                service = ClerkService()
+                ClerkService()
                 mock_clerk.assert_called_once_with(bearer_auth="sk_test_123")
 
     def test_init_missing_secret_key_raises_error(self):

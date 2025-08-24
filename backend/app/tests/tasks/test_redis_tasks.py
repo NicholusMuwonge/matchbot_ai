@@ -18,10 +18,8 @@ class TestRedisTasks:
     def test_redis_connection_task_success(self):
         """Test Redis connection task succeeds with valid Redis."""
         with (
-            patch("app.tasks.redis_utils._create_redis_client") as mock_create_client,
-            patch(
-                "app.tasks.redis_utils._perform_redis_connection_test"
-            ) as mock_test,
+            patch("app.tasks.redis_utils._create_redis_client"),
+            patch("app.tasks.redis_utils._perform_redis_connection_test") as mock_test,
         ):
             mock_test.return_value = {
                 "success": True,

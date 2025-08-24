@@ -41,7 +41,7 @@ class ClerkService:
             os.getenv("CLERK_PUBLISHABLE_KEY") or settings.CLERK_PUBLISHABLE_KEY
         )
 
-    async def validate_session_token(self, token: str) -> dict[str, Any]:
+    def validate_session_token(self, token: str) -> dict[str, Any]:
         """
         Validate session token by getting session from Clerk API
         """
@@ -79,7 +79,7 @@ class ClerkService:
         except Exception as e:
             raise ClerkAuthenticationError(f"Session validation failed: {e}")
 
-    async def get_user(self, user_id: str) -> dict[str, Any] | None:
+    def get_user(self, user_id: str) -> dict[str, Any] | None:
         """Get user data from Clerk API"""
         try:
             # Use users.get() with user_id - this is the actual method
@@ -119,9 +119,7 @@ class ClerkService:
         except Exception as e:
             raise ClerkAuthenticationError(f"Failed to get user: {e}")
 
-    async def list_users(
-        self, email: str | None = None, limit: int = 10
-    ) -> dict[str, Any]:
+    def list_users(self, email: str | None = None, limit: int = 10) -> dict[str, Any]:
         """List users from Clerk API"""
         try:
             # Create request object as required by SDK
