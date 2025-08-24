@@ -85,6 +85,9 @@ class Settings(BaseSettings):
     CLERK_WEBHOOK_SECRET: str = Field(
         default="", description="Clerk webhook secret for signature verification"
     )
+    CLERK_DEBUG: bool = Field(
+        default=False, description="Enable debug logging for Clerk SDK operations"
+    )
 
     @computed_field  # type: ignore[prop-decorator]
     @property

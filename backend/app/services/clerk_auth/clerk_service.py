@@ -7,6 +7,7 @@ Handles Clerk authentication and user management operations using the actual SDK
 import base64
 import hashlib
 import hmac
+import logging
 import os
 import time
 from typing import Any
@@ -29,17 +30,42 @@ class ClerkService:
     """Clerk service that handles authentication and user management"""
 
     def __init__(self) -> None:
-        """Initialize Clerk client"""
+        """Initialize Clerk client with logging"""
         api_key = os.getenv("CLERK_SECRET_KEY") or settings.CLERK_SECRET_KEY
         if not api_key:
             raise ClerkAuthenticationError(
                 "CLERK_SECRET_KEY is required for production"
             )
 
-        self.client = Clerk(bearer_auth=api_key)
+        # Configure logging for Clerk SDK
+        self.logger = logging.getLogger("clerk_service")
+        
+        # Set up debug logging if enabled
+        debug_enabled = (
+            settings.ENVIRONMENT == "local" or 
+            settings.CLERK_DEBUG or 
+            os.getenv("CLERK_DEBUG", "").lower() == "true"
+        )
+        if debug_enabled:
+            logging.basicConfig(level=logging.DEBUG)
+            clerk_logger = logging.getLogger("clerk_backend_api")
+            clerk_logger.setLevel(logging.DEBUG)
+            self.logger.info("Clerk debug logging enabled")
+        else:
+            clerk_logger = logging.getLogger("clerk_backend_api")
+            clerk_logger.setLevel(logging.WARNING)
+            
+        # Initialize Clerk client with debug logger
+        self.client = Clerk(
+            bearer_auth=api_key,
+            debug_logger=clerk_logger if debug_enabled else None
+        )
+        
         self.publishable_key = (
             os.getenv("CLERK_PUBLISHABLE_KEY") or settings.CLERK_PUBLISHABLE_KEY
         )
+        
+        self.logger.info(f"ClerkService initialized for environment: {settings.ENVIRONMENT}")
 
     def validate_session_token(self, token: str) -> dict[str, Any]:
         """
@@ -48,6 +74,8 @@ class ClerkService:
         if not token or not token.strip():
             raise ClerkAuthenticationError("Session token is required")
 
+        self.logger.debug(f"Validating session token: {token[:10]}...")
+        
         try:
             session: Session = self.client.sessions.get(session_id=token)
 
@@ -55,10 +83,13 @@ class ClerkService:
                 raise ClerkAuthenticationError("Session not found")
 
             if session.status.value != "active":  # Status is an enum
+                self.logger.warning(f"Session validation failed - status: {session.status.value}")
                 raise ClerkAuthenticationError(
                     f"Session is not active: {session.status.value}"
                 )
 
+            self.logger.debug(f"Session validated successfully for user: {session.user_id}")
+            
             return {
                 "valid": True,
                 "session_id": session.id,
@@ -69,6 +100,7 @@ class ClerkService:
             }
 
         except SDKError as e:
+            self.logger.error(f"Clerk SDK error during session validation: {e}")
             if "not found" in str(e).lower():
                 raise ClerkAuthenticationError(
                     "Session token has expired or is invalid"
@@ -77,15 +109,19 @@ class ClerkService:
                 raise ClerkAuthenticationError(f"Clerk API authentication failed: {e}")
             raise ClerkAuthenticationError(f"Session validation failed: {e}")
         except Exception as e:
+            self.logger.error(f"Unexpected error during session validation: {e}")
             raise ClerkAuthenticationError(f"Session validation failed: {e}")
 
     def get_user(self, user_id: str) -> dict[str, Any] | None:
         """Get user data from Clerk API"""
+        self.logger.debug(f"Fetching user data for user_id: {user_id}")
+        
         try:
             # Use users.get() with user_id - this is the actual method
             user: User = self.client.users.get(user_id=user_id)
 
             if not user:
+                self.logger.debug(f"User not found: {user_id}")
                 return None
 
             # Extract primary email from email_addresses list (actual SDK structure)
@@ -99,6 +135,8 @@ class ClerkService:
                 if not primary_email and user.email_addresses:
                     primary_email = user.email_addresses[0].email_address
 
+            self.logger.debug(f"Successfully fetched user data for: {user_id} ({primary_email})")
+            
             return {
                 "id": user.id,
                 "email": primary_email,
@@ -111,16 +149,20 @@ class ClerkService:
             }
 
         except SDKError as e:
+            self.logger.error(f"Clerk SDK error fetching user {user_id}: {e}")
             if "not found" in str(e).lower():
                 return None
             if "unauthorized" in str(e).lower():
                 raise ClerkAuthenticationError(f"Clerk API authentication failed: {e}")
             raise ClerkAuthenticationError(f"Failed to get user: {e}")
         except Exception as e:
+            self.logger.error(f"Unexpected error fetching user {user_id}: {e}")
             raise ClerkAuthenticationError(f"Failed to get user: {e}")
 
     def list_users(self, email: str | None = None, limit: int = 10) -> dict[str, Any]:
         """List users from Clerk API"""
+        self.logger.debug(f"Listing users with email filter: {email}, limit: {limit}")
+        
         try:
             # Create request object as required by SDK
             request = GetUserListRequest(
