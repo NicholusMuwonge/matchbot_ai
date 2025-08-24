@@ -2,7 +2,7 @@
 Tests for Clerk authentication API routes
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -82,15 +82,15 @@ class TestAuthRoutes:
                 mock_clerk_service.return_value = mock_clerk
                 mock_clerk.validate_session_token.return_value = {"user_id": "user_123"}
 
-                # Mock sync service
+                # Mock sync service with AsyncMock for async methods
                 mock_sync = MagicMock()
                 mock_sync_service.return_value = mock_sync
-                mock_sync.fetch_and_sync_user.return_value = {
+                mock_sync.fetch_and_sync_user = AsyncMock(return_value={
                     "status": "updated",
                     "user_id": "1",
                     "clerk_user_id": "user_123",
                     "action": "user_updated",
-                }
+                })
 
                 response = client.get(
                     "/api/v1/auth/me", headers={"authorization": "Bearer sess_test123"}
@@ -116,15 +116,15 @@ class TestAuthRoutes:
                 mock_clerk_service.return_value = mock_clerk
                 mock_clerk.validate_session_token.return_value = {"user_id": "user_123"}
 
-                # Mock sync service
+                # Mock sync service with AsyncMock
                 mock_sync = MagicMock()
                 mock_sync_service.return_value = mock_sync
-                mock_sync.fetch_and_sync_user.return_value = {
+                mock_sync.fetch_and_sync_user = AsyncMock(return_value={
                     "status": "created",
                     "user_id": "1",
                     "clerk_user_id": "user_123",
                     "action": "user_created",
-                }
+                })
 
                 response = client.post(
                     "/api/v1/auth/sync-user/user_123",
@@ -146,10 +146,10 @@ class TestAuthRoutes:
                 mock_clerk_service.return_value = mock_clerk
                 mock_clerk.validate_session_token.return_value = {"user_id": "user_123"}
 
-                # Mock sync service
+                # Mock sync service with AsyncMock
                 mock_sync = MagicMock()
                 mock_sync_service.return_value = mock_sync
-                mock_sync.fetch_and_sync_user.return_value = {"status": "not_found"}
+                mock_sync.fetch_and_sync_user = AsyncMock(return_value={"status": "not_found"})
 
                 response = client.post(
                     "/api/v1/auth/sync-user/user_123",
@@ -168,15 +168,15 @@ class TestAuthRoutes:
                 mock_clerk_service.return_value = mock_clerk
                 mock_clerk.validate_session_token.return_value = {"user_id": "user_123"}
 
-                # Mock sync service
+                # Mock sync service with AsyncMock
                 mock_sync = MagicMock()
                 mock_sync_service.return_value = mock_sync
-                mock_sync.sync_user_by_email.return_value = {
+                mock_sync.sync_user_by_email = AsyncMock(return_value={
                     "status": "created",
                     "user_id": "1",
                     "clerk_user_id": "user_123",
                     "action": "user_created",
-                }
+                })
 
                 response = client.post(
                     "/api/v1/auth/sync-user-by-email?email=test@example.com",
@@ -197,10 +197,10 @@ class TestAuthRoutes:
                 mock_clerk_service.return_value = mock_clerk
                 mock_clerk.validate_session_token.return_value = {"user_id": "user_123"}
 
-                # Mock sync service
+                # Mock sync service with AsyncMock
                 mock_sync = MagicMock()
                 mock_sync_service.return_value = mock_sync
-                mock_sync.sync_user_by_email.return_value = None
+                mock_sync.sync_user_by_email = AsyncMock(return_value=None)
 
                 response = client.post(
                     "/api/v1/auth/sync-user-by-email?email=notfound@example.com",
