@@ -16,16 +16,10 @@ import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as RecoverPasswordImport } from './routes/recover-password'
 import { Route as LoginImport } from './routes/login'
 import { Route as LayoutImport } from './routes/_layout'
-import { Route as AuthenticatedImport } from './routes/_authenticated'
-import { Route as IndexImport } from './routes/index'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
-import { Route as AuthenticatedIndexImport } from './routes/_authenticated/index'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
 import { Route as LayoutItemsImport } from './routes/_layout/items'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
-import { Route as AuthenticatedSettingsImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedItemsImport } from './routes/_authenticated/items'
-import { Route as AuthenticatedAdminImport } from './routes/_authenticated/admin'
 
 // Create/Update Routes
 
@@ -54,24 +48,9 @@ const LayoutRoute = LayoutImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthenticatedRoute = AuthenticatedImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const IndexRoute = IndexImport.update({
-  path: '/',
-  getParentRoute: () => rootRoute,
-} as any)
-
 const LayoutIndexRoute = LayoutIndexImport.update({
   path: '/',
   getParentRoute: () => LayoutRoute,
-} as any)
-
-const AuthenticatedIndexRoute = AuthenticatedIndexImport.update({
-  path: '/',
-  getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 const LayoutSettingsRoute = LayoutSettingsImport.update({
@@ -89,33 +68,10 @@ const LayoutAdminRoute = LayoutAdminImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
-const AuthenticatedSettingsRoute = AuthenticatedSettingsImport.update({
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-
-const AuthenticatedItemsRoute = AuthenticatedItemsImport.update({
-  path: '/items',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-
-const AuthenticatedAdminRoute = AuthenticatedAdminImport.update({
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/_authenticated': {
-      preLoaderRoute: typeof AuthenticatedImport
-      parentRoute: typeof rootRoute
-    }
     '/_layout': {
       preLoaderRoute: typeof LayoutImport
       parentRoute: typeof rootRoute
@@ -136,18 +92,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupImport
       parentRoute: typeof rootRoute
     }
-    '/_authenticated/admin': {
-      preLoaderRoute: typeof AuthenticatedAdminImport
-      parentRoute: typeof AuthenticatedImport
-    }
-    '/_authenticated/items': {
-      preLoaderRoute: typeof AuthenticatedItemsImport
-      parentRoute: typeof AuthenticatedImport
-    }
-    '/_authenticated/settings': {
-      preLoaderRoute: typeof AuthenticatedSettingsImport
-      parentRoute: typeof AuthenticatedImport
-    }
     '/_layout/admin': {
       preLoaderRoute: typeof LayoutAdminImport
       parentRoute: typeof LayoutImport
@@ -160,10 +104,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsImport
       parentRoute: typeof LayoutImport
     }
-    '/_authenticated/': {
-      preLoaderRoute: typeof AuthenticatedIndexImport
-      parentRoute: typeof AuthenticatedImport
-    }
     '/_layout/': {
       preLoaderRoute: typeof LayoutIndexImport
       parentRoute: typeof LayoutImport
@@ -174,13 +114,6 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export const routeTree = rootRoute.addChildren([
-  IndexRoute,
-  AuthenticatedRoute.addChildren([
-    AuthenticatedAdminRoute,
-    AuthenticatedItemsRoute,
-    AuthenticatedSettingsRoute,
-    AuthenticatedIndexRoute,
-  ]),
   LayoutRoute.addChildren([
     LayoutAdminRoute,
     LayoutItemsRoute,
