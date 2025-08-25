@@ -8,12 +8,7 @@ const debugAuth = (action: string, data?: any) => {
 }
 
 export const useClerkAuth = () => {
-  const {
-    isLoaded,
-    isSignedIn,
-    userId,
-    signOut: clerkSignOut
-  } = useAuth()
+  const { isLoaded, isSignedIn, userId, signOut: clerkSignOut } = useAuth()
 
   const { user } = useUser()
   const navigate = useNavigate()
@@ -42,7 +37,9 @@ export const useClerkAuth = () => {
       firstName: user.firstName,
       lastName: user.lastName,
       imageUrl: user.imageUrl,
-      fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+      fullName:
+        user.fullName ||
+        `${user.firstName || ""} ${user.lastName || ""}`.trim(),
       isActive: true,
     }
   }

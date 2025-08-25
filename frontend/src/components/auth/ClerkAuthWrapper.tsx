@@ -1,5 +1,5 @@
+import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/clerk-react"
 import React from "react"
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react"
 
 interface ClerkAuthWrapperProps {
   children: React.ReactNode
@@ -19,12 +19,16 @@ export default function ClerkAuthWrapper({ children }: ClerkAuthWrapperProps) {
   return (
     <>
       <SignedIn>
-        {debugAuth("User signed in - rendering protected content")}
-        {children}
+        {(() => {
+          debugAuth("User signed in - rendering protected content")
+          return children
+        })()}
       </SignedIn>
       <SignedOut>
-        {debugAuth("User signed out - redirecting to sign in")}
-        <RedirectToSignIn />
+        {(() => {
+          debugAuth("User signed out - redirecting to sign in")
+          return <RedirectToSignIn />
+        })()}
       </SignedOut>
     </>
   )

@@ -1,6 +1,6 @@
 import { Flex } from "@chakra-ui/react"
-import { Outlet, createFileRoute } from "@tanstack/react-router"
 import { useAuth } from "@clerk/clerk-react"
+import { Outlet, createFileRoute } from "@tanstack/react-router"
 
 import Navbar from "@/components/Common/Navbar"
 import Sidebar from "@/components/Common/Sidebar"
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: ({ context }) => {
     debugLayout("Before load check", {
       authLoaded: context.auth?.isLoaded,
-      signedIn: context.auth?.isSignedIn
+      signedIn: context.auth?.isSignedIn,
     })
   },
 })
@@ -28,7 +28,7 @@ function AuthenticatedLayout() {
   debugLayout("Layout rendering", {
     isLoaded: auth.isLoaded,
     isSignedIn: auth.isSignedIn,
-    userId: auth.userId
+    userId: auth.userId,
   })
 
   return (

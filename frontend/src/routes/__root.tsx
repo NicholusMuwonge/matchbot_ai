@@ -1,7 +1,7 @@
+import { useAuth } from "@clerk/clerk-react"
+import type { QueryClient } from "@tanstack/react-query"
 import { Outlet, createRootRouteWithContext } from "@tanstack/react-router"
 import React, { Suspense } from "react"
-import { useAuth } from "@clerk/clerk-react"
-import { QueryClient } from "@tanstack/react-query"
 
 import NotFound from "@/components/Common/NotFound"
 
@@ -41,19 +41,21 @@ function RootComponent() {
     debugAuth("Auth state changed", {
       isLoaded: auth.isLoaded,
       isSignedIn: auth.isSignedIn,
-      userId: auth.userId
+      userId: auth.userId,
     })
   }, [auth.isLoaded, auth.isSignedIn, auth.userId])
 
   if (!auth.isLoaded) {
     debugAuth("Auth loading", "Waiting for Clerk to initialize")
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
         Loading authentication...
       </div>
     )

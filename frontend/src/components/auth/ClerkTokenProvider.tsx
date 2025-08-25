@@ -1,12 +1,14 @@
-import React from "react"
 import { useAuth } from "@clerk/clerk-react"
+import React from "react"
 import { setClerkTokenGetter } from "../../main"
 
 interface ClerkTokenProviderProps {
   children: React.ReactNode
 }
 
-export default function ClerkTokenProvider({ children }: ClerkTokenProviderProps) {
+export default function ClerkTokenProvider({
+  children,
+}: ClerkTokenProviderProps) {
   const { getToken, isLoaded } = useAuth()
 
   React.useEffect(() => {

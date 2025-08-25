@@ -1,6 +1,6 @@
-import React from "react"
 import { useAuth } from "@clerk/clerk-react"
 import { Navigate } from "@tanstack/react-router"
+import React from "react"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -15,7 +15,7 @@ const debugProtected = (action: string, data?: any) => {
 
 export default function ProtectedRoute({
   children,
-  fallback = <div>Redirecting to login...</div>
+  fallback = <div>Redirecting to login...</div>,
 }: ProtectedRouteProps) {
   const { isLoaded, isSignedIn, userId } = useAuth()
 
@@ -23,19 +23,21 @@ export default function ProtectedRoute({
     debugProtected("Route protection check", {
       isLoaded,
       isSignedIn,
-      userId
+      userId,
     })
   }, [isLoaded, isSignedIn, userId])
 
   if (!isLoaded) {
     debugProtected("Auth still loading")
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
         Checking authentication...
       </div>
     )

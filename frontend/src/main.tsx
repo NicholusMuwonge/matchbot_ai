@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/clerk-react"
 import {
   MutationCache,
   QueryCache,
@@ -8,11 +9,10 @@ import { RouterProvider, createRouter } from "@tanstack/react-router"
 import React, { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
 import { routeTree } from "./routeTree.gen"
-import { ClerkProvider } from "@clerk/clerk-react"
 
 import { ApiError, OpenAPI } from "./client"
-import { CustomProvider } from "./components/ui/provider"
 import ClerkTokenProvider from "./components/auth/ClerkTokenProvider"
+import { CustomProvider } from "./components/ui/provider"
 
 const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
@@ -73,7 +73,7 @@ const router = createRouter({
   context: {
     queryClient,
     auth: undefined!,
-  }
+  },
 })
 
 declare module "@tanstack/react-router" {
