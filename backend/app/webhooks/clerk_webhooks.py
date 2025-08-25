@@ -13,11 +13,12 @@ from app.models import (
     WebhookTransitionError,
 )
 from app.services.clerk_auth import ClerkAuthenticationError, ClerkService
-from app.services.user_sync_service import UserSyncError
-from app.tasks.user_sync_tasks import (
-    schedule_user_delete,
-    schedule_user_sync,
-)
+from app.services.user_sync_service import UserSyncError, UserSyncService
+
+# from app.tasks.user_sync_tasks import (
+#     schedule_user_delete,
+#     schedule_user_sync,
+# )
 
 logger = logging.getLogger(__name__)
 
@@ -27,28 +28,34 @@ class WebhookProcessingError(Exception):
 
 
 async def process_clerk_webhook(
-    webhook_data: dict[str, Any], headers: dict[str, str], session: Session = None
+    webhook_data: dict[str, Any],
+    headers: dict[str, str],
+    session: Session = None,
+    raw_body: str = None,
 ) -> dict[str, Any]:
     processor = ClerkWebhookProcessor()
     return await processor.process_webhook_with_verification(
-        webhook_data, headers, session
+        webhook_data, headers, session, raw_body
     )
 
 
 class ClerkWebhookProcessor:
     def __init__(self):
         self.clerk_service = ClerkService()
+        self.user_sync_service = UserSyncService()
 
     async def process_webhook_with_verification(
         self,
         webhook_data: dict[str, Any],
         headers: dict[str, str],
         session: Session = None,
+        raw_body: str = None,
     ) -> dict[str, Any]:
         webhook_id = headers.get(
             "svix-id", f"webhook_{datetime.now(timezone.utc).isoformat()}"
         )
-        payload_str = json.dumps(webhook_data, sort_keys=True)
+        # Use raw body for signature verification, fallback to re-serialized JSON
+        payload_str = raw_body if raw_body else json.dumps(webhook_data, sort_keys=True)
 
         if session is None:
             with Session(engine) as session:
@@ -183,61 +190,69 @@ class ClerkWebhookProcessor:
             )
 
     async def _process_user_created(self, user_data: dict[str, Any]) -> dict[str, Any]:
-        """Process user.created webhook - schedule background user sync"""
+        """Process user.created webhook - sync user directly"""
         try:
             clerk_user_id = user_data.get("id")
             if not clerk_user_id:
                 raise WebhookProcessingError("User ID missing from creation event")
-            task_id = schedule_user_sync(user_data, delay_seconds=0)
+
+            # Sync user directly instead of scheduling task
+            sync_result = await self.user_sync_service.sync_user_from_clerk(user_data)
 
             return {
-                "status": "accepted",
+                "status": "success",
                 "action": "user_created",
                 "clerk_user_id": clerk_user_id,
-                "task_id": task_id,
-                "message": "User sync scheduled for background processing",
+                "sync_result": sync_result,
+                "message": f"User {clerk_user_id} synced successfully",
             }
 
         except Exception as e:
-            raise WebhookProcessingError(f"User creation scheduling failed: {str(e)}")
+            raise WebhookProcessingError(f"User creation sync failed: {str(e)}")
 
     async def _process_user_updated(self, user_data: dict[str, Any]) -> dict[str, Any]:
-        """Process user.updated webhook - schedule background user sync"""
+        """Process user.updated webhook - sync user directly"""
         try:
             clerk_user_id = user_data.get("id")
             if not clerk_user_id:
                 raise WebhookProcessingError("User ID missing from update event")
-            task_id = schedule_user_sync(user_data, delay_seconds=0)
+
+            # Sync user directly instead of scheduling task
+            sync_result = await self.user_sync_service.sync_user_from_clerk(user_data)
 
             return {
-                "status": "accepted",
+                "status": "success",
                 "action": "user_updated",
                 "clerk_user_id": clerk_user_id,
-                "task_id": task_id,
-                "message": "User sync scheduled for background processing",
+                "sync_result": sync_result,
+                "message": f"User {clerk_user_id} synced successfully",
             }
 
         except Exception as e:
-            raise WebhookProcessingError(f"User update scheduling failed: {str(e)}")
+            raise WebhookProcessingError(f"User update sync failed: {str(e)}")
 
     async def _process_user_deleted(self, user_data: dict[str, Any]) -> dict[str, Any]:
-        """Process user.deleted webhook - schedule background user deletion"""
+        """Process user.deleted webhook - delete user directly"""
         try:
             clerk_user_id = user_data.get("id")
             if not clerk_user_id:
                 raise WebhookProcessingError("User ID missing from deletion event")
-            task_id = schedule_user_delete(clerk_user_id, delay_seconds=0)
+
+            # Delete user directly instead of scheduling task
+            deleted = self.user_sync_service.delete_user_by_clerk_id(clerk_user_id)
 
             return {
-                "status": "accepted",
+                "status": "success",
                 "action": "user_deleted",
                 "clerk_user_id": clerk_user_id,
-                "task_id": task_id,
-                "message": "User deletion scheduled for background processing",
+                "deleted": deleted,
+                "message": f"User {clerk_user_id} deleted successfully"
+                if deleted
+                else f"User {clerk_user_id} not found for deletion",
             }
 
         except Exception as e:
-            raise WebhookProcessingError(f"User deletion scheduling failed: {str(e)}")
+            raise WebhookProcessingError(f"User deletion failed: {str(e)}")
 
     # ===== ORGANIZATION WEBHOOK PROCESSING =====
     async def _process_organization_created(

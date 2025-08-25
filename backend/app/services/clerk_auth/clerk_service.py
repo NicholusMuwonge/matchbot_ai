@@ -52,12 +52,12 @@ class ClerkService:
 
         self.logger = logging.getLogger("clerk_service")
 
-        debug_enabled = (
+        self.debug = (
             settings.ENVIRONMENT == "local"
             or settings.CLERK_DEBUG
             or os.getenv("CLERK_DEBUG", "").lower() == "true"
         )
-        if debug_enabled:
+        if self.debug:
             logging.basicConfig(level=logging.DEBUG)
             clerk_logger = logging.getLogger("clerk_backend_api")
             clerk_logger.setLevel(logging.DEBUG)
@@ -67,7 +67,7 @@ class ClerkService:
             clerk_logger.setLevel(logging.WARNING)
 
         self.client = Clerk(
-            bearer_auth=api_key, debug_logger=clerk_logger if debug_enabled else None
+            bearer_auth=api_key, debug_logger=clerk_logger if self.debug else None
         )
 
         self.publishable_key = (
@@ -236,21 +236,70 @@ class ClerkService:
                 "CLERK_WEBHOOK_SECRET is required for production"
             )
 
+        # DEBUG: Log webhook signature verification details
+        try:
+            print("🔍 WEBHOOK SIGNATURE DEBUG STARTING")
+            print(f"🔍 Debug enabled: {self.debug}")
+            print(
+                f"🔍 Webhook secret length: {len(webhook_secret) if webhook_secret else 0}"
+            )
+            print(
+                f"🔍 Webhook secret prefix: {webhook_secret[:10] if webhook_secret else 'None'}..."
+            )
+            print(f"🔍 All headers: {list(headers.keys())}")
+        except Exception as e:
+            print(f"🔍 DEBUG ERROR: {e}")
+
+        if self.debug:
+            logger.info("=== WEBHOOK SIGNATURE VERIFICATION DEBUG ===")
+            logger.info(
+                f"Webhook secret length: {len(webhook_secret) if webhook_secret else 0}"
+            )
+            logger.info(
+                f"Webhook secret prefix: {webhook_secret[:10]}..."
+                if webhook_secret
+                else "None"
+            )
+            logger.info(f"All headers: {list(headers.keys())}")
+
         svix_id = headers.get("svix-id")
         svix_timestamp = headers.get("svix-timestamp")
         svix_signature = headers.get("svix-signature")
 
+        print(f"🔍 svix-id: {svix_id}")
+        print(f"🔍 svix-timestamp: {svix_timestamp}")
+        print(f"🔍 svix-signature: {svix_signature}")
+
+        if self.debug:
+            logger.info(f"svix-id: {svix_id}")
+            logger.info(f"svix-timestamp: {svix_timestamp}")
+            logger.info(f"svix-signature: {svix_signature}")
+
         if not all([svix_id, svix_timestamp, svix_signature]):
+            if self.debug:
+                logger.info("❌ Missing required headers")
             return False
 
         try:
             webhook_time = int(svix_timestamp)
-            if abs(time.time() - webhook_time) > 300:
+            current_time = time.time()
+            time_diff = abs(current_time - webhook_time)
+            if self.debug:
+                logger.info(
+                    f"Webhook time: {webhook_time}, Current time: {current_time}, Diff: {time_diff}s"
+                )
+            if time_diff > 300:
+                if self.debug:
+                    logger.info("❌ Webhook timestamp expired (>300s)")
                 return False
         except (ValueError, TypeError):
+            if self.debug:
+                logger.info("❌ Invalid timestamp format")
             return False
 
         signed_payload = f"{svix_id}.{svix_timestamp}.{payload}"
+        if self.debug:
+            logger.info(f"Signed payload: {signed_payload[:100]}...")
 
         secret_key = (
             webhook_secret[6:]
@@ -258,24 +307,49 @@ class ClerkService:
             else webhook_secret
         )
 
+        if self.debug:
+            logger.info(f"Secret key (after prefix removal): {len(secret_key)} chars")
+
         try:
             secret_bytes = base64.b64decode(secret_key)
-        except Exception:
+            if self.debug:
+                logger.info(f"Secret decoded successfully: {len(secret_bytes)} bytes")
+        except Exception as e:
             secret_bytes = secret_key.encode("utf-8")
+            if self.debug:
+                logger.info(f"Secret decode failed, using UTF-8: {e}")
 
         expected_sig = hmac.new(
             secret_bytes, signed_payload.encode("utf-8"), hashlib.sha256
         ).digest()
         expected_sig_b64 = base64.b64encode(expected_sig).decode("utf-8")
 
+        if self.debug:
+            logger.info(f"Expected signature: {expected_sig_b64}")
+
         sig_string = svix_signature or ""
         provided_signatures = [
             sig[3:] for sig in sig_string.split(" ") if sig.startswith("v1,")
         ]
 
-        return any(
+        if self.debug:
+            logger.info(f"Provided signatures count: {len(provided_signatures)}")
+            for i, sig in enumerate(provided_signatures):
+                logger.info(f"Provided signature {i}: {sig}")
+                matches = hmac.compare_digest(expected_sig_b64, sig)
+                logger.info(f"Signature {i} matches: {matches}")
+
+        result = any(
             hmac.compare_digest(expected_sig_b64, sig) for sig in provided_signatures
         )
+
+        if self.debug:
+            logger.info(
+                f"Final verification result: {'✅ VALID' if result else '❌ INVALID'}"
+            )
+            logger.info("=== END WEBHOOK SIGNATURE DEBUG ===")
+
+        return result
 
     def _create_organization_request(
         self,

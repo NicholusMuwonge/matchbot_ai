@@ -38,6 +38,7 @@ async def handle_clerk_webhook(
     Verifies webhook signature and processes events in background
     """
     try:
+        raw_body = await request.body()
         payload = await request.json()
 
         headers = {
@@ -52,7 +53,9 @@ async def handle_clerk_webhook(
                 detail="Missing required webhook headers (svix-id, svix-timestamp, svix-signature)",
             )
 
-        result = await process_clerk_webhook(payload, headers, session)
+        result = await process_clerk_webhook(
+            payload, headers, session, raw_body.decode("utf-8")
+        )
 
         return WebhookResponse(
             status=result["status"],

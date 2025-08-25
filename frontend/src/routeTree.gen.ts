@@ -17,6 +17,7 @@ import { Route as RecoverPasswordImport } from './routes/recover-password'
 import { Route as LoginImport } from './routes/login'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as AuthenticatedImport } from './routes/_authenticated'
+import { Route as IndexImport } from './routes/index'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
 import { Route as AuthenticatedIndexImport } from './routes/_authenticated/index'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
@@ -55,6 +56,11 @@ const LayoutRoute = LayoutImport.update({
 
 const AuthenticatedRoute = AuthenticatedImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const IndexRoute = IndexImport.update({
+  path: '/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -102,6 +108,10 @@ const AuthenticatedAdminRoute = AuthenticatedAdminImport.update({
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
     '/_authenticated': {
       preLoaderRoute: typeof AuthenticatedImport
       parentRoute: typeof rootRoute
@@ -164,6 +174,7 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export const routeTree = rootRoute.addChildren([
+  IndexRoute,
   AuthenticatedRoute.addChildren([
     AuthenticatedAdminRoute,
     AuthenticatedItemsRoute,
