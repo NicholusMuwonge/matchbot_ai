@@ -28,6 +28,7 @@ celery_app.conf.update(
         "app.tasks.computation",
         "app.tasks.file_processing",
         "app.tasks.redis_utils",
+        "app.tasks.user_sync_tasks",  # User sync tasks for Clerk webhooks
         "app.tasks.example_tasks",  # Legacy compatibility
     ],
 )
@@ -40,6 +41,10 @@ celery_app.conf.task_routes = {
     "app.tasks.file_processing.process_large_file_upload_task": {
         "queue": "file_processing"
     },
+    # User sync tasks for Clerk webhooks
+    "app.tasks.user_sync_tasks.sync_user_from_clerk_task": {"queue": "default"},
+    "app.tasks.user_sync_tasks.delete_user_task": {"queue": "default"},
+    "app.tasks.user_sync_tasks.sync_stats_task": {"queue": "default"},
     # Legacy compatibility
     "app.tasks.example_tasks.add_numbers": {"queue": "default"},
     "app.tasks.example_tasks.test_redis_connection": {"queue": "default"},
@@ -51,6 +56,7 @@ celery_app.conf.task_routes = {
     },
     # Add more routing rules as needed
 }
+
 
 if __name__ == "__main__":
     celery_app.start()
