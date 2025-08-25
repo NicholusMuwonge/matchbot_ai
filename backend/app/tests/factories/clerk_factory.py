@@ -4,7 +4,7 @@ Generate realistic Clerk API responses and webhook payloads
 """
 
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 
 import factory
 from factory import Faker, LazyAttribute, Sequence
@@ -67,7 +67,9 @@ class ClerkUserDataFactory(factory.DictFactory):
     gender = ""
 
     # Timestamps (Clerk uses milliseconds)
-    created_at = LazyAttribute(lambda obj: int(datetime.utcnow().timestamp() * 1000))
+    created_at = LazyAttribute(
+        lambda obj: int(datetime.now(timezone.utc).timestamp() * 1000)
+    )
     updated_at = LazyAttribute(lambda obj: obj["created_at"])
     last_sign_in_at = None  # New users haven't signed in
 
@@ -93,7 +95,7 @@ class ClerkUserUpdatedWebhookFactory(ClerkWebhookFactory):
     data = factory.SubFactory(
         ClerkUserDataFactory,
         last_sign_in_at=LazyAttribute(
-            lambda obj: int(datetime.utcnow().timestamp() * 1000) - 3600000
+            lambda obj: int(datetime.now(timezone.utc).timestamp() * 1000) - 3600000
         ),
     )
 
@@ -129,7 +131,9 @@ class ClerkOrganizationDataFactory(factory.DictFactory):
     private_metadata = {}
 
     # Timestamps
-    created_at = LazyAttribute(lambda obj: int(datetime.utcnow().timestamp() * 1000))
+    created_at = LazyAttribute(
+        lambda obj: int(datetime.now(timezone.utc).timestamp() * 1000)
+    )
     updated_at = LazyAttribute(lambda obj: obj["created_at"])
 
     # Creator
@@ -151,7 +155,9 @@ class ClerkWebhookHeadersFactory(factory.DictFactory):
     """Factory for Clerk webhook headers"""
 
     svix_id = Sequence(lambda n: f"msg_test_{n:012d}")
-    svix_timestamp = LazyAttribute(lambda obj: str(int(datetime.utcnow().timestamp())))
+    svix_timestamp = LazyAttribute(
+        lambda obj: str(int(datetime.now(timezone.utc).timestamp()))
+    )
     svix_signature = "v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE="  # Mock signature
     content_type = "application/json"
     user_agent = "Svix-Webhooks/1.24"
@@ -166,7 +172,7 @@ class ClerkJWTPayloadFactory(factory.DictFactory):
     aud = "https://api.example.com"
 
     # Timestamps
-    iat = LazyAttribute(lambda obj: int((datetime.utcnow()).timestamp()))
+    iat = LazyAttribute(lambda obj: int((datetime.now(timezone.utc)).timestamp()))
     exp = LazyAttribute(lambda obj: obj["iat"] + 3600)  # 1 hour expiry
 
     # User claims

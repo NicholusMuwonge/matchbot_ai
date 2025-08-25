@@ -3,7 +3,7 @@ Simple health check endpoints for Redis and Celery monitoring.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 import redis
 from fastapi import APIRouter, HTTPException
@@ -26,7 +26,7 @@ def check_redis_health():
         return {
             "status": "healthy" if result == "ok" else "unhealthy",
             "service": "redis",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as error:
         logger.error(f"Redis health check failed: {error}")
@@ -36,7 +36,7 @@ def check_redis_health():
                 "status": "unhealthy",
                 "service": "redis",
                 "error": str(error),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         )
 
@@ -57,7 +57,7 @@ def check_celery_health():
                     "status": "unhealthy",
                     "service": "celery",
                     "message": "No active workers",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 },
             )
 
@@ -66,7 +66,7 @@ def check_celery_health():
             "status": "healthy",
             "service": "celery",
             "workers": worker_count,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     except HTTPException:
@@ -79,7 +79,7 @@ def check_celery_health():
                 "status": "unhealthy",
                 "service": "celery",
                 "error": str(error),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         )
 
@@ -90,5 +90,5 @@ def health_check():
     return {
         "status": "healthy",
         "service": "api",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }

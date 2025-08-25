@@ -2,7 +2,7 @@
 Tests for ClerkService behavior and integration - Properly grouped by context
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -239,7 +239,7 @@ class TestClerkServiceWebhookSignatureVerification:
         payload = '{"test": "data"}'
         headers = {
             "svix-id": "msg_123",
-            "svix-timestamp": str(int(datetime.utcnow().timestamp())),
+            "svix-timestamp": str(int(datetime.now(timezone.utc).timestamp())),
             "svix-signature": "v1,valid_signature_here",
         }
 
@@ -260,7 +260,7 @@ class TestClerkServiceWebhookSignatureVerification:
         """Should return False when timestamp is expired"""
         payload = '{"test": "data"}'
         # Timestamp from 10 minutes ago (beyond 5 minute window)
-        old_timestamp = int(datetime.utcnow().timestamp()) - 600
+        old_timestamp = int(datetime.now(timezone.utc).timestamp()) - 600
         headers = {
             "svix-id": "msg_123",
             "svix-timestamp": str(old_timestamp),

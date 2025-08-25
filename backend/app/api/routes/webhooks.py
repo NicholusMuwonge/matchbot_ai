@@ -182,13 +182,13 @@ async def get_webhook_stats(session: SessionDep) -> dict[str, Any]:
     """
     Get webhook processing statistics
     """
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
 
     from sqlmodel import func, select
 
     from app.models import WebhookEvent, WebhookStatus
 
-    since = datetime.utcnow() - timedelta(days=1)
+    since = datetime.now(timezone.utc) - timedelta(days=1)
 
     total_statement = select(func.count(WebhookEvent.id)).where(
         WebhookEvent.created_at >= since
@@ -224,5 +224,5 @@ async def get_webhook_stats(session: SessionDep) -> dict[str, Any]:
         "failed_webhooks": failed_webhooks,
         "processing_webhooks": processing_webhooks,
         "success_rate": round(success_rate, 2),
-        "stats_timestamp": datetime.utcnow().isoformat(),
+        "stats_timestamp": datetime.now(timezone.utc).isoformat(),
     }

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlmodel import Session, select
@@ -109,7 +109,7 @@ class UserSyncService:
                     email.get("verification", {}).get("status") == "verified"
                     for email in email_addresses
                 ),
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
                 hashed_password="clerk_managed",
             )
 

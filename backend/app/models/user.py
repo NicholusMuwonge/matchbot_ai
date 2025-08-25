@@ -3,7 +3,7 @@ User models and related schemas.
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from pydantic import EmailStr
@@ -50,7 +50,6 @@ class User(UserBase, table=True):
     hashed_password: str
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
 
-    # Clerk integration fields
     clerk_user_id: str | None = Field(default=None, unique=True, index=True)
     auth_provider: str = Field(default="local")
     is_synced: bool = Field(default=False)
@@ -58,7 +57,7 @@ class User(UserBase, table=True):
     first_name: str | None = Field(default=None, max_length=255)
     last_name: str | None = Field(default=None, max_length=255)
     profile_image_url: str | None = Field(default=None)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login: datetime | None = Field(default=None)
     account_id: int | None = Field(default=None)
 
