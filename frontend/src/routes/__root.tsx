@@ -1,5 +1,7 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router"
+import { Outlet, createRootRouteWithContext } from "@tanstack/react-router"
 import React, { Suspense } from "react"
+import { useAuth } from "@clerk/clerk-react"
+import { QueryClient } from "@tanstack/react-query"
 
 import NotFound from "@/components/Common/NotFound"
 
@@ -21,14 +23,53 @@ const loadDevtools = () =>
 const TanStackDevtools =
   process.env.NODE_ENV === "production" ? () => null : React.lazy(loadDevtools)
 
-export const Route = createRootRoute({
-  component: () => (
+const debugAuth = (action: string, data?: any) => {
+  if (import.meta.env.DEV) {
+    console.log(`[Auth Debug] ${action}:`, data)
+  }
+}
+
+interface RouterContext {
+  queryClient: QueryClient
+  auth: ReturnType<typeof useAuth>
+}
+
+function RootComponent() {
+  const auth = useAuth()
+
+  React.useEffect(() => {
+    debugAuth("Auth state changed", {
+      isLoaded: auth.isLoaded,
+      isSignedIn: auth.isSignedIn,
+      userId: auth.userId
+    })
+  }, [auth.isLoaded, auth.isSignedIn, auth.userId])
+
+  if (!auth.isLoaded) {
+    debugAuth("Auth loading", "Waiting for Clerk to initialize")
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh'
+      }}>
+        Loading authentication...
+      </div>
+    )
+  }
+
+  return (
     <>
       <Outlet />
       <Suspense>
         <TanStackDevtools />
       </Suspense>
     </>
-  ),
+  )
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
+  component: RootComponent,
   notFoundComponent: () => <NotFound />,
 })

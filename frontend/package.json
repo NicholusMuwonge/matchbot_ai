@@ -8,10 +8,14 @@
     "build": "tsc -p tsconfig.build.json && vite build",
     "lint": "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true ./",
     "preview": "vite preview",
-    "generate-client": "openapi-ts"
+    "generate-client": "openapi-ts",
+    "test:auth": "playwright test --config=playwright-auth.config.ts",
+    "test:auth:ui": "playwright test --config=playwright-auth.config.ts --ui",
+    "test:auth:debug": "playwright test --config=playwright-auth.config.ts --debug"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.8.0",
+    "@clerk/clerk-react": "^5.43.1",
     "@emotion/react": "^11.14.0",
     "@tanstack/react-query": "^5.28.14",
     "@tanstack/react-query-devtools": "^5.74.9",
