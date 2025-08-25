@@ -8,6 +8,45 @@ from unittest.mock import MagicMock
 import pytest
 
 
+def create_clerk_user_mock(
+    user_id: str = "user_2abc123def456",
+    first_name: str = "John",
+    last_name: str = "Doe",
+    email: str = "test@example.com",
+    has_image: bool = False,
+    image_url: str | None = None,
+    emails: list[dict] | None = None,
+    primary_email_id: str | None = None,
+) -> MagicMock:
+    """Factory function to create Clerk SDK User mock objects with customizable attributes."""
+    user = MagicMock()
+    user.id = user_id
+    user.first_name = first_name
+    user.last_name = last_name
+    user.has_image = has_image
+    user.image_url = image_url
+    user.created_at = int(datetime.now(timezone.utc).timestamp() * 1000)
+    user.updated_at = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+    if emails is None:
+        email_obj = MagicMock()
+        email_obj.id = primary_email_id or "idn_test_email"
+        email_obj.email_address = email
+        user.email_addresses = [email_obj]
+        user.primary_email_address_id = primary_email_id or "idn_test_email"
+    else:
+        email_objects = []
+        for email_data in emails:
+            email_obj = MagicMock()
+            email_obj.id = email_data["id"]
+            email_obj.email_address = email_data["email"]
+            email_objects.append(email_obj)
+        user.email_addresses = email_objects
+        user.primary_email_address_id = primary_email_id
+
+    return user
+
+
 @pytest.fixture
 def mock_clerk_session():
     """Mock Clerk Session object based on actual SDK structure"""

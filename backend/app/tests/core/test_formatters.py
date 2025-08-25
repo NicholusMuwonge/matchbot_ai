@@ -2,12 +2,10 @@
 Tests for formatters module
 """
 
-from datetime import datetime, timezone
-from unittest.mock import MagicMock
-
 import pytest
 
 from app.core.formatters import ClerkDataFormatter
+from app.tests.fixtures.clerk_fixtures import create_clerk_user_mock
 
 
 class TestClerkDataFormatter:
@@ -15,32 +13,13 @@ class TestClerkDataFormatter:
 
     @pytest.fixture
     def sample_clerk_user(self):
-        """Create a sample Clerk SDK User object for testing"""
-        # Mock a Clerk SDK User object with the expected attributes
-        user = MagicMock()
-        user.id = "user_2abc123def456"
-        user.first_name = "John"
-        user.last_name = "Doe"
-        user.has_image = False
-        user.image_url = None
-        user.created_at = int(datetime.now(timezone.utc).timestamp() * 1000)
-        user.updated_at = int(datetime.now(timezone.utc).timestamp() * 1000)
-
-        # Mock email addresses structure as it exists in Clerk SDK
-        email_obj = MagicMock()
-        email_obj.id = "idn_test_email"
-        email_obj.email_address = "test@example.com"
-
-        user.email_addresses = [email_obj]
-        user.primary_email_address_id = "idn_test_email"
-
-        return user
+        """Create a default sample Clerk SDK User object for testing"""
+        return create_clerk_user_mock()
 
     def test_format_user_data(self, sample_clerk_user):
         """Test format_user_data returns correctly formatted user data"""
         result = ClerkDataFormatter.format_user_data(sample_clerk_user)
 
-        # Check that all expected fields are present
         expected_fields = [
             "id",
             "email",
@@ -55,11 +34,8 @@ class TestClerkDataFormatter:
         for field in expected_fields:
             assert field in result, f"Field {field} missing from formatted data"
 
-        # Check that values are correctly mapped
         assert result["id"] == sample_clerk_user.id
-        assert (
-            result["email"] == "test@example.com"
-        )  # Should extract from email_addresses
+        assert result["email"] == "test@example.com"
         assert result["first_name"] == sample_clerk_user.first_name
         assert result["last_name"] == sample_clerk_user.last_name
         assert result["created_at"] == sample_clerk_user.created_at
@@ -87,22 +63,13 @@ class TestClerkDataFormatter:
 
     def test_format_user_data_handles_missing_primary_email(self):
         """Test format_user_data gracefully handles missing primary email"""
-        user = MagicMock()
-        user.id = "user_minimal123"
-        user.first_name = "Jane"
-        user.last_name = "Smith"
-        user.has_image = False
-        user.image_url = None
-        user.created_at = int(datetime.now(timezone.utc).timestamp() * 1000)
-        user.updated_at = int(datetime.now(timezone.utc).timestamp() * 1000)
-
-        # Mock email addresses but no primary match
-        email_obj = MagicMock()
-        email_obj.id = "idn_different_email"
-        email_obj.email_address = "fallback@example.com"
-
-        user.email_addresses = [email_obj]
-        user.primary_email_address_id = "idn_nonexistent"  # Doesn't match any email
+        user = create_clerk_user_mock(
+            user_id="user_minimal123",
+            first_name="Jane",
+            last_name="Smith",
+            emails=[{"id": "idn_different_email", "email": "fallback@example.com"}],
+            primary_email_id="idn_nonexistent",  # Doesn't match any email
+        )
 
         result = ClerkDataFormatter.format_user_data(user)
 
@@ -115,17 +82,13 @@ class TestClerkDataFormatter:
 
     def test_format_user_data_with_no_emails(self):
         """Test format_user_data handles users with no email addresses"""
-        user = MagicMock()
-        user.id = "user_no_emails"
-        user.first_name = "No"
-        user.last_name = "Email"
-        user.has_image = False
-        user.image_url = None
-        user.created_at = int(datetime.now(timezone.utc).timestamp() * 1000)
-        user.updated_at = int(datetime.now(timezone.utc).timestamp() * 1000)
-
-        user.email_addresses = []  # No email addresses
-        user.primary_email_address_id = None
+        user = create_clerk_user_mock(
+            user_id="user_no_emails",
+            first_name="No",
+            last_name="Email",
+            emails=[],  # Empty emails list
+            primary_email_id=None,
+        )
 
         result = ClerkDataFormatter.format_user_data(user)
 
