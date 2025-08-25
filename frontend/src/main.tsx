@@ -15,6 +15,7 @@ import ClerkTokenProvider from "./components/auth/ClerkTokenProvider"
 import { CustomProvider } from "./components/ui/provider"
 
 const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+const CLERK_FRONTEND_URL = import.meta.env.VITE_CLERK_FRONTEND_URL
 
 if (!CLERK_PUBLISHABLE_KEY) {
   console.error("[Auth Error] Missing VITE_CLERK_PUBLISHABLE_KEY")

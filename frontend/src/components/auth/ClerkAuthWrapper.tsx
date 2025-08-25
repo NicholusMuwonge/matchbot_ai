@@ -1,4 +1,5 @@
-import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/clerk-react"
+import { SignedIn, SignedOut, useAuth } from "@clerk/clerk-react"
+import { useRouter } from "@tanstack/react-router"
 import React from "react"
 
 interface ClerkAuthWrapperProps {
@@ -12,24 +13,48 @@ const debugAuth = (action: string, data?: any) => {
 }
 
 export default function ClerkAuthWrapper({ children }: ClerkAuthWrapperProps) {
+  const router = useRouter()
+  const auth = useAuth()
+
   React.useEffect(() => {
     debugAuth("Auth wrapper mounted")
   }, [])
 
-  return (
-    <>
-      <SignedIn>
-        {(() => {
-          debugAuth("User signed in - rendering protected content")
-          return children
-        })()}
-      </SignedIn>
-      <SignedOut>
-        {(() => {
-          debugAuth("User signed out - redirecting to sign in")
-          return <RedirectToSignIn />
-        })()}
-      </SignedOut>
-    </>
-  )
+  React.useEffect(() => {
+    if (auth.isLoaded && !auth.isSignedIn) {
+      debugAuth("User not signed in - redirecting to login")
+      router.navigate({ to: "/login" })
+    }
+  }, [auth.isLoaded, auth.isSignedIn, router])
+
+  if (!auth.isLoaded) {
+    debugAuth("Auth still loading")
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh'
+      }}>
+        Loading authentication...
+      </div>
+    )
+  }
+
+  if (!auth.isSignedIn) {
+    debugAuth("User not signed in - showing loading while redirecting")
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh'
+      }}>
+        Redirecting to login...
+      </div>
+    )
+  }
+
+  debugAuth("User signed in - rendering protected content")
+  return <>{children}</>
 }

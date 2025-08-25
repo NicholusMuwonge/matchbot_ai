@@ -18,11 +18,10 @@ test.describe("Protected Routes Security", () => {
 
       await page.goto(path)
 
-      await page.waitForURL(/.*clerk.*sign-in.*/, { timeout: 10000 })
+      await page.waitForURL(/.*\/login.*/, { timeout: 10000 })
 
       const currentUrl = page.url()
-      expect(currentUrl).toContain("clerk")
-      expect(currentUrl).toContain("sign-in")
+      expect(currentUrl).toContain("/login")
 
       console.log(
         `[Test] ${name} successfully protected - redirected to:`,
@@ -41,11 +40,11 @@ test.describe("Protected Routes Security", () => {
 
       await page.waitForTimeout(2000)
 
-      const isClerkRedirect = page.url().includes("clerk")
-      console.log(`[Test] Route ${route} - Clerk redirect: ${isClerkRedirect}`)
+      const isLoginRedirect = page.url().includes("/login")
+      console.log(`[Test] Route ${route} - Login redirect: ${isLoginRedirect}`)
 
       if (route === "/") {
-        expect(page.url()).not.toContain("clerk")
+        expect(page.url()).not.toContain("/login")
       }
     }
   })
@@ -69,9 +68,9 @@ test.describe("Protected Routes Security", () => {
 
       await page.goto(route)
 
-      await page.waitForURL(/.*clerk.*/, { timeout: 10000 })
+      await page.waitForURL(/.*\/login.*/, { timeout: 10000 })
 
-      const isBlocked = page.url().includes("clerk")
+      const isBlocked = page.url().includes("/login")
       expect(isBlocked).toBe(true)
 
       console.log(`[Test] ${description} correctly blocked`)
@@ -165,7 +164,7 @@ test.describe("Route Context and Data", () => {
 
     await page.goto("/_authenticated/")
 
-    await page.waitForURL(/.*clerk.*/, { timeout: 10000 })
+    await page.waitForURL(/.*\/login.*/, { timeout: 10000 })
 
     console.log(
       "[Test] Navigation test completed - would require auth setup for full test",

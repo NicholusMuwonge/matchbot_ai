@@ -3,14 +3,15 @@ import { Link } from "@tanstack/react-router"
 import { FaUserAstronaut } from "react-icons/fa"
 import { FiLogOut, FiUser } from "react-icons/fi"
 
-import useAuth from "@/hooks/useAuth"
+import { useClerkAuth } from "@/hooks/useClerkAuth"
 import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "../ui/menu"
 
 const UserMenu = () => {
-  const { user, logout } = useAuth()
+  const { getCurrentUser, signOut } = useClerkAuth()
+  const user = getCurrentUser()
 
   const handleLogout = async () => {
-    logout()
+    await signOut()
   }
 
   return (
@@ -21,7 +22,7 @@ const UserMenu = () => {
           <MenuTrigger asChild p={2}>
             <Button data-testid="user-menu" variant="solid" maxW="sm" truncate>
               <FaUserAstronaut fontSize="18" />
-              <Text>{user?.full_name || "User"}</Text>
+              <Text>{user?.fullName || "User"}</Text>
             </Button>
           </MenuTrigger>
 

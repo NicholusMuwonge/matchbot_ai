@@ -6,20 +6,19 @@ test.describe("Clerk Authentication Flow", () => {
     await page.goto("/")
   })
 
-  test("redirects to Clerk sign-in when not authenticated", async ({
+  test("redirects to login page when not authenticated", async ({
     page,
   }) => {
-    console.log("[Test] Testing redirect to Clerk sign-in")
+    console.log("[Test] Testing redirect to login page")
 
     await page.goto("/_authenticated/")
 
-    await page.waitForURL(/.*clerk.*sign-in.*/, { timeout: 10000 })
+    await page.waitForURL(/.*\/login.*/, { timeout: 10000 })
 
     const currentUrl = page.url()
-    expect(currentUrl).toContain("clerk")
-    expect(currentUrl).toContain("sign-in")
+    expect(currentUrl).toContain("/login")
 
-    console.log("[Test] Successfully redirected to Clerk sign-in:", currentUrl)
+    console.log("[Test] Successfully redirected to login:", currentUrl)
   })
 
   test("shows authentication loading state", async ({ page }) => {
@@ -98,9 +97,9 @@ test.describe("Clerk Authentication Flow", () => {
     for (const route of protectedRoutes) {
       await page.goto(route)
 
-      await page.waitForURL(/.*clerk.*/, { timeout: 10000 })
+      await page.waitForURL(/.*\/login.*/, { timeout: 10000 })
 
-      const isRedirected = page.url().includes("clerk")
+      const isRedirected = page.url().includes("/login")
       expect(isRedirected).toBe(true)
 
       console.log(`[Test] Protected route ${route} correctly redirected`)
