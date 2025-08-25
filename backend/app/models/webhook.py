@@ -2,7 +2,7 @@
 Webhook models and event handling.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from sqlmodel import JSON, Column, Field, SQLModel
@@ -33,7 +33,7 @@ class WebhookEvent(SQLModel, table=True):
     error_details: dict | None = Field(default=None, sa_column=Column(JSON))
     raw_data: dict = Field(sa_column=Column(JSON))
     processed_data: dict | None = Field(default=None, sa_column=Column(JSON))
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime | None = None
     source_ip: str | None = None
     user_agent: str | None = None

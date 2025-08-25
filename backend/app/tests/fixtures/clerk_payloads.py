@@ -3,14 +3,14 @@ Realistic Clerk webhook payloads for testing
 Based on actual Clerk API responses
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def get_user_created_payload(
     user_id: str = "user_2abc123def456", email: str = "test@example.com"
 ):
     """Real Clerk user.created webhook payload structure"""
-    timestamp = int(datetime.utcnow().timestamp() * 1000)
+    timestamp = int(datetime.now(timezone.utc).timestamp() * 1000)
 
     return {
         "data": {
@@ -58,7 +58,7 @@ def get_user_updated_payload(
     user_id: str = "user_existing123", email: str = "updated@example.com"
 ):
     """Real Clerk user.updated webhook payload structure"""
-    timestamp = int(datetime.utcnow().timestamp() * 1000)
+    timestamp = int(datetime.now(timezone.utc).timestamp() * 1000)
 
     return {
         "data": {
@@ -115,7 +115,7 @@ def get_organization_created_payload(
     org_id: str = "org_abc123", creator_id: str = "user_creator123"
 ):
     """Real Clerk organization.created webhook payload structure"""
-    timestamp = int(datetime.utcnow().timestamp() * 1000)
+    timestamp = int(datetime.now(timezone.utc).timestamp() * 1000)
 
     return {
         "data": {
@@ -141,7 +141,7 @@ def get_valid_webhook_headers(webhook_id: str = "msg_unique123"):
     """Real Clerk webhook headers structure"""
     return {
         "svix-id": webhook_id,
-        "svix-timestamp": str(int(datetime.utcnow().timestamp())),
+        "svix-timestamp": str(int(datetime.now(timezone.utc).timestamp())),
         "svix-signature": "v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE=",
         "content-type": "application/json",
         "user-agent": "Svix-Webhooks/1.24",

@@ -2,7 +2,7 @@ from collections.abc import Generator
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
@@ -137,3 +137,130 @@ def get_clerk_current_active_superuser(current_user: ClerkCurrentUser) -> User:
 
 
 ClerkCurrentSuperuser = Annotated[User, Depends(get_clerk_current_active_superuser)]
+
+
+# New improved auth dependencies using official Clerk SDK
+def get_current_user_session(request: Request, session: SessionDep) -> User:
+    """
+    Get current user using official Clerk SDK authenticate_request method.
+
+    Single responsibility: Session-based user authentication.
+    """
+    try:
+        clerk_service = ClerkService()
+        auth_data = clerk_service.authenticate_session(request)
+
+        clerk_user_id = auth_data.get("user_id")
+        if not clerk_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="No user ID in authenticated request",
+            )
+
+        # Get user from database
+        from sqlmodel import select
+
+        statement = select(User).where(User.clerk_user_id == clerk_user_id)
+        user = session.exec(statement).first()
+
+        if not user:
+            # Try to sync user from Clerk
+            sync_service = UserSyncService()
+            sync_result = sync_service.fetch_and_sync_user(clerk_user_id)
+
+            if sync_result and sync_result.get("user_id"):
+                user = session.get(User, sync_result["user_id"])
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found in database")
+
+        if not user.is_active:
+            raise HTTPException(status_code=400, detail="User account is inactive")
+
+        return user
+
+    except ClerkAuthenticationError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Authentication error: {str(e)}",
+        )
+
+
+def get_current_user_machine_token(request: Request, session: SessionDep) -> User:
+    """
+    Get current user using machine/OAuth token authentication.
+
+    Single responsibility: Machine token-based user authentication.
+    For service-to-service communication, mobile apps, etc.
+    """
+    try:
+        clerk_service = ClerkService()
+        auth_data = clerk_service.authenticate_machine_token(request)
+
+        clerk_user_id = auth_data.get("user_id")
+        if not clerk_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="No user ID in machine token",
+            )
+
+        # Get user from database
+        from sqlmodel import select
+
+        statement = select(User).where(User.clerk_user_id == clerk_user_id)
+        user = session.exec(statement).first()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found in database")
+
+        if not user.is_active:
+            raise HTTPException(status_code=400, detail="User account is inactive")
+
+        return user
+
+    except ClerkAuthenticationError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Machine token authentication error: {str(e)}",
+        )
+
+
+def get_current_superuser_session(
+    current_user: Annotated[User, Depends(get_current_user_session)],
+) -> User:
+    """
+    Get current superuser using session authentication.
+
+    Single responsibility: Superuser privilege validation.
+    """
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=403, detail="The user doesn't have enough privileges"
+        )
+    return current_user
+
+
+def get_current_superuser_machine_token(
+    current_user: Annotated[User, Depends(get_current_user_machine_token)],
+) -> User:
+    """
+    Get current superuser using machine token authentication.
+
+    Single responsibility: Superuser privilege validation for machine tokens.
+    """
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=403, detail="The user doesn't have enough privileges"
+        )
+    return current_user
+
+
+# Type annotations for the new dependencies
+ClerkSessionUser = Annotated[User, Depends(get_current_user_session)]
+ClerkMachineUser = Annotated[User, Depends(get_current_user_machine_token)]
+ClerkSessionSuperuser = Annotated[User, Depends(get_current_superuser_session)]
+ClerkMachineSuperuser = Annotated[User, Depends(get_current_superuser_machine_token)]

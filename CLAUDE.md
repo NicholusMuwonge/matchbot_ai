@@ -8,3 +8,10 @@ For each change you make, you must create a new branch. After implementing chang
 2. Implement the required modifications
 3. Push the branch to remote
 4. Create a merge request targeting the develop branch
+
+## Code Quality Standards
+- Remove unnecessary comments (code should be self-documenting)
+- Break down large functions into smaller, focused functions
+- Single responsibility principle: each function does one thing well
+- Use descriptive function and variable names
+- Keep functions under 50 lines when possible

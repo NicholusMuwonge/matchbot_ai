@@ -2,7 +2,7 @@
 Clerk-related test fixtures
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
@@ -20,11 +20,17 @@ def mock_clerk_session():
     session.client_id = "client_123"
     session.status = MagicMock()
     session.status.value = "active"  # Enum value
-    session.last_active_at = int(datetime.utcnow().timestamp()) - 300  # 5 min ago
-    session.expire_at = int(datetime.utcnow().timestamp()) + 3600  # 1 hour from now
-    session.abandon_at = int(datetime.utcnow().timestamp()) + 7200  # 2 hours from now
-    session.created_at = int(datetime.utcnow().timestamp()) - 600  # 10 min ago
-    session.updated_at = int(datetime.utcnow().timestamp()) - 300  # 5 min ago
+    session.last_active_at = (
+        int(datetime.now(timezone.utc).timestamp()) - 300
+    )  # 5 min ago
+    session.expire_at = (
+        int(datetime.now(timezone.utc).timestamp()) + 3600
+    )  # 1 hour from now
+    session.abandon_at = (
+        int(datetime.now(timezone.utc).timestamp()) + 7200
+    )  # 2 hours from now
+    session.created_at = int(datetime.now(timezone.utc).timestamp()) - 600  # 10 min ago
+    session.updated_at = int(datetime.now(timezone.utc).timestamp()) - 300  # 5 min ago
 
     return session
 
@@ -51,8 +57,12 @@ def mock_clerk_user():
     user.image_url = "https://img.clerk.com/test_image"  # May not exist in real model
     user.primary_email_address_id = "idn_email_123"
     user.email_addresses = [email_obj]
-    user.created_at = int(datetime.utcnow().timestamp())  # May not exist in real model
-    user.updated_at = int(datetime.utcnow().timestamp())  # May not exist in real model
+    user.created_at = int(
+        datetime.now(timezone.utc).timestamp()
+    )  # May not exist in real model
+    user.updated_at = int(
+        datetime.now(timezone.utc).timestamp()
+    )  # May not exist in real model
 
     return user
 
@@ -75,7 +85,7 @@ def mock_user_list():
     user.image_url = None
     user.primary_email_address_id = "idn_email_456"
     user.email_addresses = [email_obj]
-    user.created_at = int(datetime.utcnow().timestamp())
+    user.created_at = int(datetime.now(timezone.utc).timestamp())
 
     return [user]
 

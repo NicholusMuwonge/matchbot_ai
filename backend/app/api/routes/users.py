@@ -2,10 +2,16 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlmodel import col, delete, func, select
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.deps import (
+    ClerkSessionSuperuser,
+    CurrentUser,
+    SessionDep,
+    get_current_active_superuser,
+)
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models import (
@@ -20,7 +26,18 @@ from app.models import (
     UserUpdate,
     UserUpdateMe,
 )
+from app.services.user_sync_service import UserSyncError, UserSyncService
 from app.utils import generate_new_account_email, send_email
+
+
+# Clerk Admin Models
+class UserSyncResponse(BaseModel):
+    status: str
+    user_id: str | None = None
+    clerk_user_id: str
+    action: str
+    message: str | None = None
+
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -220,3 +237,84 @@ def delete_user(
     session.delete(user)
     session.commit()
     return Message(message="User deleted successfully")
+
+
+# Clerk User Sync Operations (Admin Only)
+@router.post(
+    "/clerk/sync/{clerk_user_id}",
+    response_model=UserSyncResponse,
+)
+async def sync_user_from_clerk(
+    clerk_user_id: str, _: ClerkSessionSuperuser
+) -> UserSyncResponse:
+    """
+    Manually trigger user sync from Clerk (Admin only).
+
+    Single responsibility: Sync specific user from Clerk to local database.
+    Normally handled by webhooks, but useful for manual admin operations.
+    """
+    try:
+        sync_service = UserSyncService()
+        result = await sync_service.fetch_and_sync_user(clerk_user_id)
+
+        if result.get("status") == "not_found":
+            raise HTTPException(status_code=404, detail="User not found in Clerk")
+
+        return UserSyncResponse(
+            status=result["status"],
+            user_id=result.get("user_id"),
+            clerk_user_id=clerk_user_id,
+            action=result.get("action", "sync"),
+            message=f"User {result['status']} successfully",
+        )
+
+    except UserSyncError as e:
+        raise HTTPException(status_code=500, detail=f"User sync failed: {str(e)}")
+
+
+@router.post(
+    "/clerk/sync-by-email/{email}",
+    response_model=UserSyncResponse | Message,
+)
+async def sync_user_by_email(email: str, _: ClerkSessionSuperuser) -> Any:
+    """
+    Find and sync user by email from Clerk (Admin only).
+
+    Single responsibility: Find user by email in Clerk and sync to local database.
+    """
+    try:
+        sync_service = UserSyncService()
+        result = await sync_service.sync_user_by_email(email)
+
+        if result is None:
+            return Message(message=f"No user found with email: {email}")
+
+        return UserSyncResponse(
+            status=result["status"],
+            user_id=result.get("user_id"),
+            clerk_user_id=result["clerk_user_id"],
+            action=result.get("action", "sync"),
+            message=f"User {result['status']} successfully",
+        )
+
+    except UserSyncError as e:
+        raise HTTPException(status_code=500, detail=f"User sync failed: {str(e)}")
+
+
+@router.get(
+    "/clerk/sync-stats",
+)
+async def get_clerk_sync_stats(_: ClerkSessionSuperuser) -> dict[str, int]:
+    """
+    Get Clerk user synchronization statistics (Admin only).
+
+    Single responsibility: Return sync statistics for monitoring.
+    """
+    try:
+        sync_service = UserSyncService()
+        return sync_service.get_sync_stats()
+
+    except UserSyncError as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get sync stats: {str(e)}"
+        )

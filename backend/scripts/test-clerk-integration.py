@@ -11,22 +11,22 @@ import json
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Add the backend directory to the path so we can import our modules
 backend_dir = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, backend_dir)
 
-from sqlmodel import Session, select
+from sqlmodel import Session, select  # noqa: E402
 
-from app.core.db import engine
-from app.models import User, WebhookEvent
-from app.services.clerk_service import (
+from app.core.db import engine  # noqa: E402
+from app.models import User, WebhookEvent  # noqa: E402
+from app.services.clerk_service import (  # noqa: E402
     CLERK_AVAILABLE,
     ClerkAuthenticationError,
     ClerkService,
 )
-from app.services.user_sync_service import UserSyncService
+from app.services.user_sync_service import UserSyncService  # noqa: E402
 
 
 class ClerkIntegrationTester:
@@ -60,7 +60,7 @@ class ClerkIntegrationTester:
                 "status": status,  # "PASS", "FAIL", "SKIP"
                 "message": message,
                 "details": details or {},
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -390,7 +390,7 @@ class ClerkIntegrationTester:
                         "success_rate": (passed_tests / total_tests) * 100,
                     },
                     "results": self.results,
-                    "generated_at": datetime.utcnow().isoformat(),
+                    "generated_at": datetime.now(timezone.utc).isoformat(),
                 },
                 f,
                 indent=2,
