@@ -19,6 +19,8 @@ from clerk_backend_api.models.user import User
 
 from app.core.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 class ClerkAuthenticationError(Exception):
     """Raised when Clerk authentication operations fail"""
@@ -272,3 +274,76 @@ class ClerkService:
         return any(
             hmac.compare_digest(expected_sig_b64, sig) for sig in provided_signatures
         )
+
+    def create_user(
+        self,
+        email: str,
+        password: str,
+        first_name: str | None = None,
+        last_name: str | None = None,
+    ) -> dict[str, Any] | None:
+        """
+        Create a new user in Clerk
+
+        Args:
+            email: User's email address
+            password: User's password
+            first_name: User's first name (optional)
+            last_name: User's last name (optional)
+
+        Returns:
+            User data dictionary or None if creation failed
+        """
+        from clerk_backend_api.models.operations import CreateUserRequestBody
+
+        logger.info(f"Creating user with email: {email}")
+
+        try:
+            # Prepare user creation request
+            create_request = CreateUserRequestBody(
+                email_addresses=[email],
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                skip_password_checks=False,
+                skip_password_requirement=False,
+            )
+
+            # Create user via Clerk SDK
+            response = self.client.users.create(create_request)
+
+            if not response or not response.id:
+                logger.error("Failed to create user - no response or ID")
+                return None
+
+            # Format response similar to get_user format
+            user_data = {
+                "id": response.id,
+                "email": email,
+                "first_name": response.first_name,
+                "last_name": response.last_name,
+                "has_image": bool(response.image_url),
+                "created_at": int(response.created_at / 1000)
+                if response.created_at
+                else None,
+                "updated_at": int(response.updated_at / 1000)
+                if response.updated_at
+                else None,
+            }
+
+            logger.info(f"Successfully created user: {response.id}")
+            return user_data
+
+        except Exception as e:
+            logger.error(f"Failed to create user: {str(e)}")
+
+            # Handle specific Clerk errors
+            error_message = str(e)
+            if "email_address_taken" in error_message.lower():
+                raise ClerkAuthenticationError("Email address is already registered")
+            elif "password" in error_message.lower():
+                raise ClerkAuthenticationError("Password does not meet requirements")
+            else:
+                raise ClerkAuthenticationError(f"User creation failed: {error_message}")
+
+            return None

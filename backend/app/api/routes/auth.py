@@ -8,7 +8,6 @@ from typing import Any
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
-from app.api.deps import SessionDep
 from app.models import Message, User
 from app.services.clerk_auth import ClerkAuthenticationError, ClerkService
 from app.services.user_sync_service import UserSyncError, UserSyncService
@@ -36,6 +35,33 @@ class UserSyncResponse(BaseModel):
     message: str | None = None
 
 
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    first_name: str | None = None
+    last_name: str | None = None
+
+
+class SignupResponse(BaseModel):
+    success: bool
+    user_id: str | None = None
+    clerk_user_id: str | None = None
+    message: str
+    errors: list[str] | None = None
+
+
+class TokenRefreshRequest(BaseModel):
+    session_token: str
+
+
+class TokenRefreshResponse(BaseModel):
+    success: bool
+    new_token: str | None = None
+    expires_at: int | None = None
+    message: str
+    error: str | None = None
+
+
 @router.post("/validate-session", response_model=SessionValidationResponse)
 async def validate_session(
     request: SessionValidationRequest,
@@ -56,6 +82,62 @@ async def validate_session(
 
     except ClerkAuthenticationError as e:
         return SessionValidationResponse(valid=False, error=str(e))
+
+
+@router.post("/signup", response_model=SignupResponse)
+async def signup(request: SignupRequest) -> SignupResponse:
+    """
+    Create a new user account with Clerk and sync to local database
+    """
+    try:
+        clerk_service = ClerkService()
+
+        # Create user in Clerk
+        clerk_user = clerk_service.create_user(
+            email=request.email,
+            password=request.password,
+            first_name=request.first_name,
+            last_name=request.last_name,
+        )
+
+        if not clerk_user:
+            return SignupResponse(
+                success=False,
+                message="Failed to create user in Clerk",
+                errors=["User creation failed"],
+            )
+
+        # Sync user to local database
+        sync_service = UserSyncService()
+        sync_result = await sync_service.fetch_and_sync_user(clerk_user["id"])
+
+        if sync_result and sync_result.get("status") in ["created", "updated"]:
+            return SignupResponse(
+                success=True,
+                user_id=sync_result.get("user_id"),
+                clerk_user_id=clerk_user["id"],
+                message="User account created successfully",
+            )
+        else:
+            return SignupResponse(
+                success=False,
+                clerk_user_id=clerk_user["id"],
+                message="User created in Clerk but failed to sync to database",
+                errors=["Database sync failed"],
+            )
+
+    except ClerkAuthenticationError as e:
+        return SignupResponse(success=False, message="Signup failed", errors=[str(e)])
+    except UserSyncError as e:
+        return SignupResponse(
+            success=False,
+            message="User created but sync failed",
+            errors=[f"Sync error: {str(e)}"],
+        )
+    except Exception as e:
+        return SignupResponse(
+            success=False, message="Unexpected error during signup", errors=[str(e)]
+        )
 
 
 @router.get("/me", response_model=User)
@@ -215,4 +297,58 @@ async def get_sync_stats(
     except UserSyncError as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to get sync stats: {str(e)}"
+        )
+
+
+@router.post("/refresh-token", response_model=TokenRefreshResponse)
+async def refresh_token(request: TokenRefreshRequest) -> TokenRefreshResponse:
+    """
+    Refresh a Clerk session token if it's close to expiring
+
+    Note: Clerk handles session management internally. This endpoint validates
+    the current session and returns information about its validity.
+    Actual token refresh is handled by Clerk's frontend SDK.
+    """
+    try:
+        clerk_service = ClerkService()
+        session_data = clerk_service.validate_session_token(request.session_token)
+
+        if not session_data.get("valid"):
+            return TokenRefreshResponse(
+                success=False,
+                message="Session token is invalid or expired",
+                error="Invalid session token",
+            )
+
+        # Check if session is close to expiring (within 10 minutes)
+        expires_at = session_data.get("expire_at")
+        if expires_at:
+            import time
+
+            current_time = int(time.time())
+            time_until_expiry = expires_at - current_time
+
+            if time_until_expiry < 600:  # Less than 10 minutes
+                return TokenRefreshResponse(
+                    success=False,
+                    message="Session is close to expiring. Please re-authenticate with Clerk.",
+                    error="Session expiring soon",
+                    expires_at=expires_at,
+                )
+
+        # Session is still valid
+        return TokenRefreshResponse(
+            success=True,
+            new_token=request.session_token,  # Clerk manages actual tokens
+            expires_at=expires_at,
+            message="Session is still valid",
+        )
+
+    except ClerkAuthenticationError as e:
+        return TokenRefreshResponse(
+            success=False, message="Failed to validate session", error=str(e)
+        )
+    except Exception as e:
+        return TokenRefreshResponse(
+            success=False, message="Unexpected error during token refresh", error=str(e)
         )
