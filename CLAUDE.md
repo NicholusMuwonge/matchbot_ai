@@ -15,3 +15,9 @@ For each change you make, you must create a new branch. After implementing chang
 - Single responsibility principle: each function does one thing well
 - Use descriptive function and variable names
 - Keep functions under 50 lines when possible
+
+## Security Guidelines
+- NEVER commit sensitive files like .env, .env.local, .env.production to version control
+- Always ensure .env files are in .gitignore before committing
+- Use .env.example with placeholder values for documentation
+- Remove any sensitive data from version control immediately if accidentally committed
