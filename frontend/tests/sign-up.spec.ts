@@ -13,7 +13,9 @@ const fillClerkSignUpForm = async (
   password: string,
 ) => {
   // Wait for Clerk SignUp component to load
-  await page.waitForSelector('[data-clerk-element="sign-up"]', { timeout: 10000 })
+  await page.waitForSelector('[data-clerk-element="sign-up"]', {
+    timeout: 10000,
+  })
 
   // Fill first name
   await page.fill('input[name="firstName"]', firstName)
@@ -30,7 +32,9 @@ const fillClerkSignUpForm = async (
 
 // Helper to verify Clerk signup form is visible
 const verifyClerkSignUpFormVisible = async (page: Page) => {
-  await page.waitForSelector('[data-clerk-element="sign-up"]', { timeout: 10000 })
+  await page.waitForSelector('[data-clerk-element="sign-up"]', {
+    timeout: 10000,
+  })
   await expect(page.locator('input[name="firstName"]')).toBeVisible()
   await expect(page.locator('input[name="lastName"]')).toBeVisible()
   await expect(page.locator('input[name="emailAddress"]')).toBeVisible()
@@ -52,16 +56,22 @@ test("Clerk SignUp form fields are visible and editable", async ({ page }) => {
 test("Clerk Sign Up button is visible", async ({ page }) => {
   await page.goto("/signup")
 
-  await page.waitForSelector('[data-clerk-element="sign-up"]', { timeout: 10000 })
+  await page.waitForSelector('[data-clerk-element="sign-up"]', {
+    timeout: 10000,
+  })
   await expect(page.locator('button[type="submit"]')).toBeVisible()
 })
 
 test("Sign In link is visible in Clerk SignUp", async ({ page }) => {
   await page.goto("/signup")
 
-  await page.waitForSelector('[data-clerk-element="sign-up"]', { timeout: 10000 })
+  await page.waitForSelector('[data-clerk-element="sign-up"]', {
+    timeout: 10000,
+  })
   // Clerk typically shows a sign in link at the bottom
-  await expect(page.locator('a[href*="signin"], a:has-text("Sign in")')).toBeVisible()
+  await expect(
+    page.locator('a[href*="signin"], a:has-text("Sign in")'),
+  ).toBeVisible()
 })
 
 test("Sign up with valid information", async ({ page }) => {
@@ -76,7 +86,10 @@ test("Sign up with valid information", async ({ page }) => {
 
   // Clerk may require email verification - check for verification step
   // This will depend on your Clerk configuration
-  await page.waitForSelector('text="Verify your email", text="Check your email"', { timeout: 10000 })
+  await page.waitForSelector(
+    'text="Verify your email", text="Check your email"',
+    { timeout: 10000 },
+  )
 })
 
 test("Sign up with invalid email shows Clerk validation", async ({ page }) => {
@@ -150,7 +163,9 @@ test("Clerk handles password confirmation automatically", async ({ page }) => {
   expect(passwordFields).toBe(1)
 })
 
-test("Sign up with missing first name shows Clerk validation", async ({ page }) => {
+test("Sign up with missing first name shows Clerk validation", async ({
+  page,
+}) => {
   const firstName = ""
   const lastName = "User"
   const email = randomEmail()
@@ -180,7 +195,9 @@ test("Sign up with missing email shows Clerk validation", async ({ page }) => {
   await expect(page.locator('[role="alert"], .cl-formFieldError')).toBeVisible()
 })
 
-test("Sign up with missing password shows Clerk validation", async ({ page }) => {
+test("Sign up with missing password shows Clerk validation", async ({
+  page,
+}) => {
   const firstName = "Test"
   const lastName = "User"
   const email = randomEmail()

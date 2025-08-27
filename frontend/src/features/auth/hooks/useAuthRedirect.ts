@@ -1,45 +1,22 @@
+import { AUTH_ROUTES } from "@/config/constants"
 import { useAuth } from "@clerk/clerk-react"
 import { useNavigate } from "@tanstack/react-router"
 import { useEffect } from "react"
-import type { AuthRedirectOptions } from "../types/auth.types"
 
-/**
- * Hook for handling authentication redirects
- */
-export const useAuthRedirect = (options: AuthRedirectOptions = {}) => {
+export const useAuthRedirect = (
+  redirectTo: string = AUTH_ROUTES.DEFAULT_REDIRECT,
+) => {
   const { isSignedIn, isLoaded } = useAuth()
   const navigate = useNavigate()
 
-  const {
-    fallbackRedirectUrl = "/",
-    signInFallbackRedirectUrl = "/signin",
-    signUpFallbackRedirectUrl = "/signup",
-  } = options
-
   useEffect(() => {
-    if (!isLoaded) return
-
-    if (isSignedIn) {
-      navigate({ to: fallbackRedirectUrl })
+    if (isLoaded && isSignedIn) {
+      navigate({ to: redirectTo })
     }
-  }, [isSignedIn, isLoaded, navigate, fallbackRedirectUrl])
-
-  const redirectToSignIn = () => {
-    navigate({ to: signInFallbackRedirectUrl })
-  }
-
-  const redirectToSignUp = () => {
-    navigate({ to: signUpFallbackRedirectUrl })
-  }
-
-  const redirectToDashboard = () => {
-    navigate({ to: fallbackRedirectUrl })
-  }
+  }, [isLoaded, isSignedIn, navigate, redirectTo])
 
   return {
-    redirectToSignIn,
-    redirectToSignUp,
-    redirectToDashboard,
+    shouldRender: !isLoaded || !isSignedIn,
     isLoaded,
     isSignedIn,
   }

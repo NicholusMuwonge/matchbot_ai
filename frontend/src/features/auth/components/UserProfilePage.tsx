@@ -20,11 +20,7 @@ export const UserProfilePage = () => {
           Profile Settings
         </Heading>
 
-        <UserProfile
-          appearance={appearance}
-          routing="path"
-          path="/settings"
-        />
+        <UserProfile appearance={appearance} routing="path" path="/settings" />
       </VStack>
     </Container>
   )

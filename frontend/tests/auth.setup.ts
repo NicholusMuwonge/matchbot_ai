@@ -8,7 +8,9 @@ setup("authenticate", async ({ page }) => {
   await page.goto("/signin")
 
   // Wait for Clerk SignIn component to load
-  await page.waitForSelector('[data-clerk-element="sign-in"]', { timeout: 10000 })
+  await page.waitForSelector('[data-clerk-element="sign-in"]', {
+    timeout: 10000,
+  })
 
   // Fill in credentials using Clerk's form structure
   // Clerk forms may have different selectors

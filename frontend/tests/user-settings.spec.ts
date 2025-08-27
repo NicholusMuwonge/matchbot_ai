@@ -4,7 +4,9 @@ import { firstSuperuser, firstSuperuserPassword } from "./config.ts"
 // Helper to sign in with Clerk for settings tests
 const signInWithClerk = async (page: any, email: string, password: string) => {
   await page.goto("/signin")
-  await page.waitForSelector('[data-clerk-element="sign-in"]', { timeout: 10000 })
+  await page.waitForSelector('[data-clerk-element="sign-in"]', {
+    timeout: 10000,
+  })
   await page.fill('input[name="identifier"]', email)
   await page.click('button[type="submit"]')
   await page.waitForSelector('input[name="password"]', { timeout: 5000 })
@@ -27,7 +29,9 @@ test("Settings page loads with Clerk UserProfile", async ({ page }) => {
   await page.goto("/settings")
 
   // Check that Clerk UserProfile component is loaded
-  await page.waitForSelector('[data-clerk-element="userProfile"]', { timeout: 10000 })
+  await page.waitForSelector('[data-clerk-element="userProfile"]', {
+    timeout: 10000,
+  })
   await expect(page.getByText("Profile Settings")).toBeVisible()
 })
 
@@ -35,7 +39,9 @@ test("Clerk UserProfile component is interactive", async ({ page }) => {
   await page.goto("/settings")
 
   // Verify Clerk UserProfile is present and interactive
-  await page.waitForSelector('[data-clerk-element="userProfile"]', { timeout: 10000 })
+  await page.waitForSelector('[data-clerk-element="userProfile"]', {
+    timeout: 10000,
+  })
 
   // Clerk UserProfile should have navigation elements
   const userProfile = page.locator('[data-clerk-element="userProfile"]')
@@ -52,7 +58,9 @@ test.describe("Clerk UserProfile functionality", () => {
     await page.goto("/settings")
 
     // Verify Clerk UserProfile is present
-    await page.waitForSelector('[data-clerk-element="userProfile"]', { timeout: 10000 })
+    await page.waitForSelector('[data-clerk-element="userProfile"]', {
+      timeout: 10000,
+    })
 
     // Clerk UserProfile handles all profile editing internally
     // We just verify it's loaded and functional
@@ -61,7 +69,9 @@ test.describe("Clerk UserProfile functionality", () => {
 
     // Look for common Clerk UserProfile sections
     // These may vary based on Clerk configuration
-    await expect(page.locator('[data-clerk-element="userProfile"] nav, .cl-navbar')).toBeVisible()
+    await expect(
+      page.locator('[data-clerk-element="userProfile"] nav, .cl-navbar'),
+    ).toBeVisible()
   })
 })
 
@@ -75,7 +85,9 @@ test.describe("Clerk UserProfile validation", () => {
     await page.goto("/settings")
 
     // Verify Clerk UserProfile loads
-    await page.waitForSelector('[data-clerk-element="userProfile"]', { timeout: 10000 })
+    await page.waitForSelector('[data-clerk-element="userProfile"]', {
+      timeout: 10000,
+    })
 
     // Clerk handles all form validation internally
     // We just verify the component is functional
@@ -99,7 +111,9 @@ test.describe("Password management through Clerk", () => {
     await page.goto("/settings")
 
     // Verify Clerk UserProfile loads
-    await page.waitForSelector('[data-clerk-element="userProfile"]', { timeout: 10000 })
+    await page.waitForSelector('[data-clerk-element="userProfile"]', {
+      timeout: 10000,
+    })
 
     // Clerk UserProfile includes password management functionality
     // This is handled internally by Clerk's secure interface
@@ -121,7 +135,9 @@ test("App Preferences section is visible", async ({ page }) => {
   await expect(page.getByText("App Preferences")).toBeVisible()
 
   // Look for the appearance controls
-  await expect(page.locator('label:has-text("Light Mode"), label:has-text("Dark Mode")')).toBeVisible()
+  await expect(
+    page.locator('label:has-text("Light Mode"), label:has-text("Dark Mode")'),
+  ).toBeVisible()
 })
 
 test("User can switch from light mode to dark mode and vice versa", async ({

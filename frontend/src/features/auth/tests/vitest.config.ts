@@ -2,18 +2,18 @@
  * Vitest configuration for auth feature tests
  */
 
-import { defineConfig } from 'vitest/config'
-import { resolve } from 'path'
+import { resolve } from "node:path"
+import { defineConfig } from "vitest/config"
 
 export default defineConfig({
   test: {
-    environment: 'jsdom',
+    environment: "jsdom",
     globals: true,
-    setupFiles: ['./test-setup.ts'],
+    setupFiles: ["./test-setup.ts"],
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, '../../../'),
+      "@": resolve(__dirname, "../../../"),
     },
   },
 })

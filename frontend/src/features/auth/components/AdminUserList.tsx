@@ -15,7 +15,6 @@ import { useQuery } from "@tanstack/react-query"
  * Integrates with existing backend user management functionality
  */
 export const AdminUserList = () => {
-
   const {
     data: usersResponse,
     isLoading,
@@ -47,10 +46,7 @@ export const AdminUserList = () => {
         borderColor={{ base: "red.200", _dark: "red.600" }}
         borderRadius="md"
       >
-        <Text
-          color={{ base: "red.700", _dark: "red.300" }}
-          fontWeight="medium"
-        >
+        <Text color={{ base: "red.700", _dark: "red.300" }} fontWeight="medium">
           Error loading users:{" "}
           {error instanceof Error ? error.message : "Unknown error"}
         </Text>
@@ -62,10 +58,7 @@ export const AdminUserList = () => {
 
   return (
     <VStack gap={6} align="stretch">
-      <Heading
-        size="lg"
-        color={{ base: "gray.900", _dark: "white" }}
-      >
+      <Heading size="lg" color={{ base: "gray.900", _dark: "white" }}>
         User Management
       </Heading>
 
@@ -154,15 +147,8 @@ export const AdminUserList = () => {
         </Table.Root>
       </Box>
 
-      <Box
-        p={4}
-        bg={{ base: "gray.50", _dark: "gray.800" }}
-        borderRadius="md"
-      >
-        <Text
-          fontSize="sm"
-          color={{ base: "gray.600", _dark: "gray.300" }}
-        >
+      <Box p={4} bg={{ base: "gray.50", _dark: "gray.800" }} borderRadius="md">
+        <Text fontSize="sm" color={{ base: "gray.600", _dark: "gray.300" }}>
           Total Users: {users.length}
         </Text>
       </Box>
