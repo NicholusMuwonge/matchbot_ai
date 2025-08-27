@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_layout")({
 
 function Layout() {
   return (
-    <AuthGuard redirectTo="/signin">
+    <AuthGuard redirectTo="/login">
       <Flex direction="column" h="100vh">
         <Navbar />
         <Flex flex="1" overflow="hidden">

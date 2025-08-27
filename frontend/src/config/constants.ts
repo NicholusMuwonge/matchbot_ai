@@ -3,7 +3,7 @@
  */
 
 export const AUTH_ROUTES = {
-  SIGNIN: "/signin",
+  LOGIN: "/login",
   SIGNUP: "/signup",
   DASHBOARD: "/",
   DEFAULT_REDIRECT: "/",

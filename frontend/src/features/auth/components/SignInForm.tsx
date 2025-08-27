@@ -30,13 +30,16 @@ export const SignInForm = ({ appearance, isDark }: SignInFormProps) => {
             transition="filter 0.2s"
           />
 
-          <SignIn
-            appearance={appearance}
-            redirectUrl="/"
-            signUpUrl="/signup"
-            routing="path"
-            path="/signin"
-          />
+          <Box p={4} border="2px solid red" borderRadius="md">
+            <p>DEBUG: SignInForm is rendering</p>
+            <SignIn
+              appearance={appearance}
+              fallbackRedirectUrl="/"
+              signUpUrl="/signup"
+              routing="path"
+              path="/login"
+            />
+          </Box>
         </VStack>
       </Container>
     </Box>

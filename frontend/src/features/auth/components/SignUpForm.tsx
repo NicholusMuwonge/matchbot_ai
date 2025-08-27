@@ -33,7 +33,7 @@ export const SignUpForm = ({ appearance, isDark }: SignUpFormProps) => {
           <SignUp
             appearance={appearance}
             redirectUrl="/"
-            signInUrl="/signin"
+            signInUrl="/login"
             routing="path"
             path="/signup"
           />
