@@ -1,11 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router"
-
-import { SignInPage } from "@/features/auth"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/login")({
-  component: SignInPage,
   beforeLoad: async () => {
-    // Note: We can't use useAuth hook here as this is outside component
-    // Instead, we'll handle redirect logic in the SignInPage component
+    // Redirect old login route to new signin route
+    throw redirect({
+      to: "/signin",
+    })
   },
 })
