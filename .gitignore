@@ -21,3 +21,4 @@ node_modules/
 !frontend/.claude/examples/Screenshot*.png
 !frontend/.claude/examples/mermaid_diagram.png
 !.claude/examples/mermaid_diagram.png
+chakra_ui_3_llm.txt

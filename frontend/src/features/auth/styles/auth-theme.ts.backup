@@ -1,0 +1,254 @@
+/**
+ * Theme-aware styles for auth components
+ * Supports both light and dark modes following design system
+ */
+
+// Theme-aware styles for auth components - using object definitions instead of Chakra style configs
+
+// Color scheme configurations for auth components
+export const authColors = {
+  light: {
+    // Primary colors (following CLAUDE.md guidelines)
+    primary: '#2463eb',
+    background: '#f4f8fe',
+    surface: '#ffffff',
+
+    // Text colors
+    text: {
+      primary: '#1a202c',
+      secondary: '#4a5568',
+      muted: '#718096',
+    },
+
+    // Border colors
+    border: {
+      default: '#e2e8f0',
+      focus: '#2463eb',
+      error: '#e53e3e',
+      success: '#38a169',
+    },
+
+    // Status colors
+    status: {
+      error: '#fed7d7',
+      success: '#c6f6d5',
+      warning: '#fef5e7',
+      info: '#bee3f8',
+    },
+  },
+  dark: {
+    // Primary colors adapted for dark mode
+    primary: '#4299e1',
+    background: '#0f1419',
+    surface: '#1a202c',
+
+    // Text colors
+    text: {
+      primary: '#f7fafc',
+      secondary: '#cbd5e0',
+      muted: '#a0aec0',
+    },
+
+    // Border colors
+    border: {
+      default: '#2d3748',
+      focus: '#4299e1',
+      error: '#fc8181',
+      success: '#68d391',
+    },
+
+    // Status colors
+    status: {
+      error: '#2d1b1b',
+      success: '#1a2b23',
+      warning: '#2d2619',
+      info: '#1a2b3d',
+    },
+  },
+}
+
+// Auth card styles for sign in/up pages
+export const authCardStyles = {
+  baseStyle: {
+    borderRadius: 'lg',
+    padding: 6,
+    boxShadow: 'lg',
+    border: '1px solid',
+    width: 'full',
+    maxWidth: 'sm',
+  },
+  variants: {
+    light: {
+      backgroundColor: authColors.light.surface,
+      borderColor: authColors.light.border.default,
+      color: authColors.light.text.primary,
+    },
+    dark: {
+      backgroundColor: authColors.dark.surface,
+      borderColor: authColors.dark.border.default,
+      color: authColors.dark.text.primary,
+    },
+  },
+}
+
+// Loading spinner styles for AuthGuard
+export const authSpinnerStyles = {
+  baseStyle: {
+    size: 'lg',
+  },
+  variants: {
+    light: {
+      color: authColors.light.primary,
+    },
+    dark: {
+      color: authColors.dark.primary,
+    },
+  },
+}
+
+// Admin table styles
+export const adminTableStyles = {
+  baseStyle: {
+    borderRadius: 'md',
+    overflow: 'hidden',
+  },
+  variants: {
+    light: {
+      backgroundColor: authColors.light.surface,
+      '& thead': {
+        backgroundColor: authColors.light.status.info,
+      },
+      '& tbody tr:nth-of-type(even)': {
+        backgroundColor: '#f8fafc',
+      },
+      '& tbody tr:hover': {
+        backgroundColor: '#edf2f7',
+      },
+    },
+    dark: {
+      backgroundColor: authColors.dark.surface,
+      '& thead': {
+        backgroundColor: authColors.dark.status.info,
+      },
+      '& tbody tr:nth-of-type(even)': {
+        backgroundColor: '#2a2e3a',
+      },
+      '& tbody tr:hover': {
+        backgroundColor: '#3a424d',
+      },
+    },
+  },
+}
+
+// Error message styles
+export const authErrorStyles = {
+  baseStyle: {
+    padding: 4,
+    borderRadius: 'md',
+    border: '1px solid',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+  },
+  variants: {
+    light: {
+      backgroundColor: authColors.light.status.error,
+      borderColor: authColors.light.border.error,
+      color: '#c53030',
+    },
+    dark: {
+      backgroundColor: authColors.dark.status.error,
+      borderColor: authColors.dark.border.error,
+      color: '#fc8181',
+    },
+  },
+}
+
+// Badge styles for admin user list
+export const authBadgeStyles = {
+  baseStyle: {
+    fontSize: 'xs',
+    fontWeight: 'medium',
+    px: 2,
+    py: 1,
+    borderRadius: 'sm',
+  },
+  variants: {
+    'active-light': {
+      backgroundColor: '#c6f6d5',
+      color: '#22543d',
+    },
+    'active-dark': {
+      backgroundColor: '#1a2b23',
+      color: '#68d391',
+    },
+    'inactive-light': {
+      backgroundColor: '#fed7d7',
+      color: '#742a2a',
+    },
+    'inactive-dark': {
+      backgroundColor: '#2d1b1b',
+      color: '#fc8181',
+    },
+    'verified-light': {
+      backgroundColor: '#c6f6d5',
+      color: '#22543d',
+    },
+    'verified-dark': {
+      backgroundColor: '#1a2b23',
+      color: '#68d391',
+    },
+    'pending-light': {
+      backgroundColor: '#fef5e7',
+      color: '#744210',
+    },
+    'pending-dark': {
+      backgroundColor: '#2d2619',
+      color: '#f6e05e',
+    },
+    'clerk-light': {
+      backgroundColor: '#bee3f8',
+      color: '#1a365d',
+    },
+    'clerk-dark': {
+      backgroundColor: '#1a2b3d',
+      color: '#90cdf4',
+    },
+  },
+}
+
+// Utility functions for theme-aware styling
+export const getThemeVariant = (isDark: boolean) => (isDark ? 'dark' : 'light')
+
+export const getAuthColors = (isDark: boolean) =>
+  isDark ? authColors.dark : authColors.light
+
+export const getBadgeVariant = (
+  type: 'active' | 'inactive' | 'verified' | 'pending' | 'clerk',
+  isDark: boolean
+) => `${type}-${isDark ? 'dark' : 'light'}`
+
+// Clerk component theme overrides
+export const clerkThemeOverrides = {
+  light: {
+    colorPrimary: authColors.light.primary,
+    colorBackground: authColors.light.surface,
+    colorInputBackground: authColors.light.surface,
+    colorInputText: authColors.light.text.primary,
+    colorText: authColors.light.text.primary,
+    colorTextSecondary: authColors.light.text.secondary,
+    colorNeutral: authColors.light.text.muted,
+    borderRadius: '0.375rem',
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  },
+  dark: {
+    colorPrimary: authColors.dark.primary,
+    colorBackground: authColors.dark.surface,
+    colorInputBackground: authColors.dark.surface,
+    colorInputText: authColors.dark.text.primary,
+    colorText: authColors.dark.text.primary,
+    colorTextSecondary: authColors.dark.text.secondary,
+    colorNeutral: authColors.dark.text.muted,
+    borderRadius: '0.375rem',
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  },
+}

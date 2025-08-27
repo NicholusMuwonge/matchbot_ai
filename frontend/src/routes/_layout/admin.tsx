@@ -1,4 +1,11 @@
-import { Badge, Container, Flex, Heading, Table } from "@chakra-ui/react"
+import {
+  Badge,
+  Container,
+  Flex,
+  Heading,
+  Table,
+  VStack,
+} from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { z } from "zod"
@@ -13,6 +20,7 @@ import {
   PaginationPrevTrigger,
   PaginationRoot,
 } from "@/components/ui/pagination.tsx"
+import { AdminUserList } from "@/features/auth"
 
 const usersSearchSchema = z.object({
   page: z.number().catch(1),
@@ -116,12 +124,28 @@ function UsersTable() {
 function Admin() {
   return (
     <Container maxW="full">
-      <Heading size="lg" pt={12}>
-        Users Management
-      </Heading>
+      <VStack gap={8} align="stretch">
+        <Heading size="lg" pt={12}>
+          Users Management
+        </Heading>
 
-      <AddUser />
-      <UsersTable />
+        {/* Traditional User Management */}
+        <VStack gap={4} align="stretch">
+          <Heading size="md" color="gray.700">
+            Traditional User Management
+          </Heading>
+          <AddUser />
+          <UsersTable />
+        </VStack>
+
+        {/* Clerk User Management */}
+        <VStack gap={4} align="stretch">
+          <Heading size="md" color="gray.700">
+            Clerk Authentication Status
+          </Heading>
+          <AdminUserList />
+        </VStack>
+      </VStack>
     </Container>
   )
 }
