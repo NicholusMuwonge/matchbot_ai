@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router"
-
-import { SignUpPage } from "@/features/auth"
+import { createFileRoute, redirect } from "@tanstack/react-router"
+import { Signup } from "@/features/auth/components"
 
 export const Route = createFileRoute("/signup")({
-  component: SignUpPage,
-  beforeLoad: async () => {
-    // Redirect logic handled in SignUpPage component via Clerk
+  beforeLoad: ({ context }) => {
+    if (context.auth.isSignedIn) {
+      throw redirect({ to: "/" })
+    }
   },
+  component: () => <Signup />,
 })

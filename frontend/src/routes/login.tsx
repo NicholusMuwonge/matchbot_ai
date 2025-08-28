@@ -1,14 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router"
-
-const TestComponent = () => {
-  return (
-    <div style={{ background: 'red', padding: '20px', color: 'white' }}>
-      <h1>DEBUG: Login route is working!</h1>
-      <p>This confirms the /login route is being processed.</p>
-    </div>
-  )
-}
+import { createFileRoute, redirect } from "@tanstack/react-router"
+import { Login } from "@/features/auth/components"
 
 export const Route = createFileRoute("/login")({
-  component: TestComponent,
+  beforeLoad: ({ context }) => {
+    if (context.auth.isSignedIn) {
+      throw redirect({ to: "/" })
+    }
+  },
+  component: () => <Login />,
 })

@@ -1,7 +1,15 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router"
+import { Outlet, createRootRouteWithContext } from "@tanstack/react-router"
 import React, { Suspense } from "react"
 
-import NotFound from "@/components/Common/NotFound"
+import { NotFound } from "@/shared/components"
+
+interface MyRouterContext {
+  auth: {
+    userId: string | null | undefined
+    isSignedIn: boolean | undefined
+    isLoaded: boolean
+  }
+}
 
 const loadDevtools = () =>
   Promise.all([
@@ -21,7 +29,7 @@ const loadDevtools = () =>
 const TanStackDevtools =
   process.env.NODE_ENV === "production" ? () => null : React.lazy(loadDevtools)
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () => (
     <>
       <Outlet />
