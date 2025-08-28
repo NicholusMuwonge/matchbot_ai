@@ -4,6 +4,32 @@ The frontend is built with [Vite](https://vitejs.dev/), [React](https://reactjs.
 
 ## Frontend development
 
+### Development with Docker (Hot Reloading)
+
+For the easiest development experience with hot reloading:
+
+```bash
+# From the project root directory
+cd /home/nick/matchbot_ai
+docker compose --file docker-compose.yml --file docker-compose.override.yml up frontend --build --watch
+```
+
+Or use the convenience script:
+
+```bash
+# From the frontend directory
+cd frontend
+./scripts/dev.sh
+```
+
+This will:
+- Start the frontend development server with hot reloading
+- Mount your source code as volumes for instant file changes
+- Make the frontend available at `http://localhost:5173`
+- Automatically reload the page when you save changes
+
+### Local Node.js Development
+
 Before you begin, ensure that you have either the Node Version Manager (nvm) or Fast Node Manager (fnm) installed on your system.
 
 * To install fnm follow the [official fnm guide](https://github.com/Schniz/fnm#installation). If you prefer nvm, you can install it using the [official nvm guide](https://github.com/nvm-sh/nvm#installing-and-updating).
