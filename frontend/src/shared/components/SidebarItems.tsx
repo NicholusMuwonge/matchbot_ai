@@ -22,8 +22,8 @@ import {
   FiUser,
   FiUsers,
 } from "react-icons/fi"
-import { useNavigationStoreWithBreakpoint } from "../store/navigation-store"
 import { Tooltip } from "../../components/ui/tooltip"
+import { useNavigationStoreWithBreakpoint } from "../store/navigation-store"
 
 interface NavigationItem {
   icon: IconType
@@ -105,7 +105,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
         align="center"
         gap={3}
         px={isChild ? 6 : 3}
-        py={3}
+        py={2}
         borderRadius="md"
         cursor="pointer"
         bg={isActive ? "bg.emphasized" : "transparent"}
@@ -149,7 +149,11 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
           positioning={{ placement: "right", gutter: 12 }}
           aria-label={`Navigate to ${item.title}`}
         >
-          <RouterLink to={item.path} onClick={onClose} aria-label={`Navigate to ${item.title}`}>
+          <RouterLink
+            to={item.path}
+            onClick={onClose}
+            aria-label={`Navigate to ${item.title}`}
+          >
             {itemContent}
           </RouterLink>
         </Tooltip>
@@ -175,19 +179,14 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
     const isExpanded = expandedSections.includes(item.title)
 
     if (isCollapsed) {
-      return (
-        <Box key={item.title}>
-          {renderNavigationItem(item)}
-          {item.children?.map((child) => renderNavigationItem(child, true))}
-        </Box>
-      )
+      return renderNavigationItem(item)
     }
 
     return (
       <Box key={item.title}>
         <HStack
           px={3}
-          py={3}
+          py={2}
           cursor="pointer"
           onClick={() => toggleSection(item.title)}
           _hover={{
@@ -197,10 +196,10 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
           borderRadius="md"
           role="button"
           aria-expanded={isExpanded}
-          aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.title} section`}
+          aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.title} section`}
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === "Enter" || e.key === " ") {
               e.preventDefault()
               toggleSection(item.title)
             }
@@ -250,7 +249,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   })
 
   return (
-    <VStack align="stretch" gap={1} role="menu" aria-label="Navigation menu">
+    <VStack align="stretch" gap={0.5} role="menu" aria-label="Navigation menu">
       {!isCollapsed && (
         <Text
           fontSize="xs"
@@ -266,7 +265,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
           Navigation
         </Text>
       )}
-      <VStack align="stretch" gap={1}>
+      <VStack align="stretch" gap={0.5}>
         {listItems}
       </VStack>
     </VStack>

@@ -193,7 +193,24 @@ const isActive = currentPath === path ||
   - [x] Escape key closes mobile sidebar
   - [x] Tab order flows logically through navigation items
 
-### Task 4.3: Responsive Polish
+### Task 4.3: Responsive Polish & Compact Layout ✅
+- [x] Fix collapsed sidebar icon alignment issues:
+  - [x] When sidebar is collapsed, accordion icons should be on the same line as regular nav items
+  - [x] Nested icons should appear at the same level in collapsed navbar (not showing children separately)
+  - [x] All navigation icons should be vertically aligned
+- [x] Make navbar compact:
+  - [x] Reduce vertical padding between navigation options (py={3} to py={2})
+  - [x] Reduce gap between items (gap={1} to gap={0.5})
+- [x] Fix Dashboard icon highlighting when sidebar is closed:
+  - [x] Ensure active state styling applies correctly to collapsed icons
+  - [x] Add proper tooltip support for collapsed active items
+- [x] Add test case for collapsed sidebar layout verification
+- [x] Fix mobile sidebar z-index issue:
+  - [x] Sidebar appears below overlay on mobile making it inaccessible
+  - [x] Adjust z-index values to ensure sidebar appears above overlay
+- [x] Set sidebar max width to 15vw when opened:
+  - [x] Limit expanded sidebar width to 15% of viewport width
+  - [x] Ensure consistent sizing across different screen sizes
 - [ ] Fine-tune responsive breakpoints:
   - [ ] Test sidebar behavior at tablet sizes (768px-1024px)
   - [ ] Ensure hover behavior works well on devices that support it

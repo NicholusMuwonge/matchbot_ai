@@ -9,7 +9,7 @@ const Sidebar = () => {
 
   const getWidth = () => {
     if (isMobile) return "full"
-    if (isExpanded || isHovered) return "xs"
+    if (isExpanded || isHovered) return "15vw"
     return "16"
   }
 
@@ -32,7 +32,7 @@ const Sidebar = () => {
       borderRight="1px"
       borderColor="border.muted"
       transition="width 0.2s ease-out"
-      zIndex={isMobile ? "overlay" : "sticky"}
+      zIndex={isMobile ? "tooltip" : "sticky"}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >

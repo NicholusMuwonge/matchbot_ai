@@ -1,4 +1,4 @@
-import { IconButton, Icon } from "@chakra-ui/react"
+import { Icon, IconButton } from "@chakra-ui/react"
 import { useEffect } from "react"
 import { FiMenu, FiX } from "react-icons/fi"
 import { useNavigationStoreWithBreakpoint } from "../store/navigation-store"
@@ -10,13 +10,13 @@ const NavigationToggle = () => {
   // Escape key closes mobile sidebar
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isMobile && isExpanded) {
+      if (event.key === "Escape" && isMobile && isExpanded) {
         closeMobile()
       }
     }
 
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
+    document.addEventListener("keydown", handleEscape)
+    return () => document.removeEventListener("keydown", handleEscape)
   }, [isMobile, isExpanded, closeMobile])
 
   const getIcon = () => {
