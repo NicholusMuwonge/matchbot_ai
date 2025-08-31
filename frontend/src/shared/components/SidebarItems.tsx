@@ -117,6 +117,8 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
         transition="all 0.15s ease-in-out"
         fontWeight={isActive ? "medium" : "normal"}
         position="relative"
+        aria-current={isActive ? "page" : undefined}
+        role="menuitem"
       >
         <Icon
           as={item.icon}
@@ -145,8 +147,9 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
           key={item.title}
           content={item.title}
           positioning={{ placement: "right", gutter: 12 }}
+          aria-label={`Navigate to ${item.title}`}
         >
-          <RouterLink to={item.path} onClick={onClose}>
+          <RouterLink to={item.path} onClick={onClose} aria-label={`Navigate to ${item.title}`}>
             {itemContent}
           </RouterLink>
         </Tooltip>
@@ -154,7 +157,14 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
     }
 
     return (
-      <RouterLink key={item.title} to={item.path} onClick={onClose}>
+      <RouterLink
+        key={item.title}
+        to={item.path}
+        onClick={onClose}
+        tabIndex={0}
+        role="menuitem"
+        aria-label={`Navigate to ${item.title}`}
+      >
         {itemContent}
       </RouterLink>
     )
@@ -185,6 +195,16 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
           }}
           transition="all 0.15s ease-in-out"
           borderRadius="md"
+          role="button"
+          aria-expanded={isExpanded}
+          aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.title} section`}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              toggleSection(item.title)
+            }
+          }}
         >
           <Icon
             as={isExpanded ? FiChevronDown : FiChevronRight}
@@ -230,7 +250,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   })
 
   return (
-    <VStack align="stretch" gap={1}>
+    <VStack align="stretch" gap={1} role="menu" aria-label="Navigation menu">
       {!isCollapsed && (
         <Text
           fontSize="xs"
@@ -240,6 +260,8 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
           py={2}
           textTransform="uppercase"
           letterSpacing="wider"
+          role="heading"
+          aria-level={2}
         >
           Navigation
         </Text>

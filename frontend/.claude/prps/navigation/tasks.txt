@@ -180,18 +180,18 @@ const isActive = currentPath === path ||
 - [x] Toggle button icon morphing animation (Menu ↔ X) with rotation
 - [x] Subtle hover effects for navigation items (enhanced with consistent timing)
 
-### Task 4.2: Accessibility Enhancements
-- [ ] Add proper ARIA attributes:
-  - [ ] `role="navigation"` on main sidebar container
-  - [ ] `aria-label="Main navigation"` for sidebar
-  - [ ] `aria-expanded` for collapsible sections
-  - [ ] `aria-current="page"` for active navigation items
-  - [ ] `aria-label` for icon-only tooltips when collapsed
-- [ ] Keyboard navigation support:
-  - [ ] Ensure all interactive elements are keyboard accessible
-  - [ ] Toggle button activation with Enter/Space
-  - [ ] Escape key closes mobile sidebar
-  - [ ] Tab order flows logically through navigation items
+### Task 4.2: Accessibility Enhancements ✅
+- [x] Add proper ARIA attributes:
+  - [x] `role="navigation"` on main sidebar container
+  - [x] `aria-label="Main navigation"` for sidebar
+  - [x] `aria-expanded` for collapsible sections
+  - [x] `aria-current="page"` for active navigation items
+  - [x] `aria-label` for icon-only tooltips when collapsed
+- [x] Keyboard navigation support:
+  - [x] Ensure all interactive elements are keyboard accessible
+  - [x] Toggle button activation with Enter/Space (built-in IconButton behavior)
+  - [x] Escape key closes mobile sidebar
+  - [x] Tab order flows logically through navigation items
 
 ### Task 4.3: Responsive Polish
 - [ ] Fine-tune responsive breakpoints:

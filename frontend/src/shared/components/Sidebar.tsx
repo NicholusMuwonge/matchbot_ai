@@ -19,6 +19,9 @@ const Sidebar = () => {
 
   return (
     <Box
+      as="nav"
+      role="navigation"
+      aria-label="Main navigation"
       position="fixed"
       bg="bg.subtle"
       top={0}
