@@ -28,7 +28,7 @@ const Sidebar = () => {
       p={4}
       borderRight="1px"
       borderColor="border.muted"
-      transition="width 0.2s ease"
+      transition="width 0.2s ease-out"
       zIndex={isMobile ? "overlay" : "sticky"}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

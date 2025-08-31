@@ -114,7 +114,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
           bg: isActive ? "bg.emphasized" : "bg.subtle",
           color: "fg.default",
         }}
-        transition="all 0.2s"
+        transition="all 0.15s ease-in-out"
         fontWeight={isActive ? "medium" : "normal"}
         position="relative"
       >

@@ -47,7 +47,7 @@ function DashboardHeader() {
       borderBottom="1px"
       borderColor="border.muted"
       ml={getMarginLeft()}
-      transition="margin 0.2s ease"
+      transition="margin 0.2s ease-out"
       data-testid="dashboard-header"
     >
       <Navbar />
@@ -73,7 +73,7 @@ function DashboardContent({ children }: DashboardContentProps) {
       direction="column"
       flex="1"
       ml={getMarginLeft()}
-      transition="margin 0.2s ease"
+      transition="margin 0.2s ease-out"
       data-testid="dashboard-content"
     >
       <DashboardHeader />

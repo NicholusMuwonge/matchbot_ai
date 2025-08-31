@@ -33,7 +33,11 @@ const NavigationToggle = () => {
         transform: "scale(1.05)",
       }}
     >
-      <Icon as={getIcon()} />
+      <Icon
+        as={getIcon()}
+        transition="all 0.2s ease-in-out"
+        transform={isMobile && isExpanded ? "rotate(90deg)" : "rotate(0deg)"}
+      />
     </IconButton>
   )
 }
