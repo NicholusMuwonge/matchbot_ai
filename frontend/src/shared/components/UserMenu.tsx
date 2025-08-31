@@ -1,6 +1,11 @@
 import { AbsoluteCenter, Box, Circle, Flex } from "@chakra-ui/react"
-import { UserButton, ClerkLoading, ClerkLoaded, SignedIn } from "@clerk/clerk-react"
 import { Skeleton } from "@chakra-ui/react"
+import {
+  ClerkLoaded,
+  ClerkLoading,
+  SignedIn,
+  UserButton,
+} from "@clerk/clerk-react"
 import * as React from "react"
 
 export interface UserMenuProps {
@@ -13,11 +18,15 @@ const UserMenuSkeleton = React.forwardRef<HTMLDivElement, { size?: string }>(
     const sizeMap = {
       sm: "6",
       md: "8",
-      lg: "10"
+      lg: "10",
     }
 
     return (
-      <Circle size={sizeMap[size as keyof typeof sizeMap] || sizeMap.md} asChild ref={ref}>
+      <Circle
+        size={sizeMap[size as keyof typeof sizeMap] || sizeMap.md}
+        asChild
+        ref={ref}
+      >
         <Skeleton
           variant="pulse"
           css={{
@@ -27,7 +36,7 @@ const UserMenuSkeleton = React.forwardRef<HTMLDivElement, { size?: string }>(
         />
       </Circle>
     )
-  }
+  },
 )
 
 const UserMenu = React.forwardRef<HTMLDivElement, UserMenuProps>(
@@ -35,7 +44,7 @@ const UserMenu = React.forwardRef<HTMLDivElement, UserMenuProps>(
     const sizeMap = {
       sm: { avatarSize: "24px", padding: 1 },
       md: { avatarSize: "32px", padding: 2 },
-      lg: { avatarSize: "40px", padding: 3 }
+      lg: { avatarSize: "40px", padding: 3 },
     }
 
     const { avatarSize, padding } = sizeMap[size]
@@ -89,7 +98,7 @@ const UserMenu = React.forwardRef<HTMLDivElement, UserMenuProps>(
         </ClerkLoaded>
       </Box>
     )
-  }
+  },
 )
 
 export default UserMenu

@@ -1,0 +1,294 @@
+# Enhanced Retractable Sidebar Navigation - Implementation Tasks
+
+## Phase 1: Architecture & State Management
+
+### Task 1.1: Create Navigation State Management (Zustand Store)
+- [ ] Create `frontend/src/shared/store/navigation-store.ts` using Zustand for:
+  - [ ] `isExpanded: boolean` - Sidebar expansion state (default: false - collapsed)
+  - [ ] `isHovered: boolean` - Hover state tracking for auto-expand
+  - [ ] `isMobile: boolean` - Device detection state
+  - [ ] `showOverlay: boolean` - Mobile overlay backdrop state
+- [ ] Actions: `toggleSidebar()`, `setHovered()`, `setMobile()`, `closeMobile()`
+- [ ] Persist `isExpanded` to localStorage
+- [ ] Use `useBreakpointValue()` to detect mobile state automatically
+
+**Example State Shape**:
+```typescript
+interface NavigationState {
+  isExpanded: boolean
+  isHovered: boolean
+  isMobile: boolean
+  showOverlay: boolean
+  actions: {
+    toggleSidebar: () => void
+    setHovered: (hovered: boolean) => void
+    setMobile: (mobile: boolean) => void
+    closeMobile: () => void
+  }
+}
+```
+
+**Prompt**: "Create a Zustand store for managing sidebar state with persistent localStorage and responsive mobile detection"
+
+### Task 1.2: Extend Current Navigation Data
+- [ ] Modify the existing `items` array in `SidebarItems.tsx` to support expandable sections:
+  - [ ] Add optional `children` property to existing items structure
+  - [ ] Add optional `section` property to group items under collapsible sections
+  - [ ] Keep existing Dashboard and Items, add more realistic navigation items for your app
+  - [ ] Support badges/counters for items (e.g., notification counts)
+
+**Example Enhanced Structure**:
+```typescript
+interface NavigationItem {
+  icon: IconType
+  title: string
+  path: string
+  children?: NavigationItem[]
+  badge?: number | string
+  section?: string
+}
+
+// Example data - adapt to your actual app needs:
+const items = [
+  { icon: FiHome, title: "Dashboard", path: "/" },
+  { icon: FiBriefcase, title: "Items", path: "/items" },
+  {
+    icon: FiUsers,
+    title: "Team Management",
+    path: "/team",
+    children: [
+      { icon: FiUser, title: "Members", path: "/team/members" },
+      { icon: FiSettings, title: "Roles", path: "/team/roles" }
+    ]
+  }
+]
+```
+
+## Phase 2: Enhance Existing Sidebar Component
+
+### Task 2.1: Enhance Current Sidebar.tsx with Retractable Behavior
+- [ ] Modify `shared/components/Sidebar.tsx` to use navigation store state:
+  - [ ] Import and use navigation store: `const { isExpanded, isHovered, isMobile } = useNavigationStore()`
+  - [ ] Change `position` from `sticky` to `fixed` for proper overlay behavior
+  - [ ] Dynamic width based on state:
+    - Collapsed: `w="16"` (64px for icon-only)
+    - Expanded: `w="xs"` (keep current width ~320px)
+    - Mobile: `w="full"` with overlay
+  - [ ] Add hover handlers: `onMouseEnter={() => setHovered(true)}`, `onMouseLeave={() => setHovered(false)}`
+  - [ ] Add smooth width transitions: `transition="width 0.2s ease"`
+  - [ ] Z-index management: `zIndex={isMobile ? "overlay" : "sticky"}`
+
+**Key Changes to Existing Component**:
+- Keep existing styling (`bg="bg.subtle"`, `borderRight`, `borderColor`)
+- Enhance responsive behavior beyond just `display={{ base: "none", md: "flex" }}`
+- Add state-driven width and positioning
+
+### Task 2.2: Create Navigation Toggle Button
+- [ ] Create `shared/components/NavigationToggle.tsx`:
+  - [ ] Use Chakra `IconButton` with Menu/X icons (import from react-icons/fi)
+  - [ ] Position: `position="fixed"`, `top="4"`, `left="4"`, `zIndex="banner"`
+  - [ ] Show different icons: FiMenu when collapsed, FiX when expanded on mobile
+  - [ ] Style using theme colors: `colorPalette="primary"` to match `#2463eb`
+  - [ ] Size: `size="md"` for good touch targets
+  - [ ] Smooth icon transition animations
+
+**Props**: Connect to `toggleSidebar()` action from navigation store
+
+### Task 2.3: Enhance Current SidebarItems.tsx with Collapsible Sections
+- [ ] Modify `shared/components/SidebarItems.tsx` to support:
+  - [ ] Dynamic rendering based on collapsed state (show icons only when collapsed)
+  - [ ] Collapsible section headers with chevron icons
+  - [ ] Nested navigation items with proper indentation
+  - [ ] Badge/counter support for notification indicators
+  - [ ] Smooth transitions for expand/collapse animations
+
+**Enhanced Item Rendering**:
+- When collapsed (`!isExpanded && !isHovered`): Show only icons with tooltips
+- When expanded: Show full labels and section headers
+- Use Chakra `Collapse` component for smooth section animations
+
+### Task 2.4: Create Collapsible Section Component
+- [ ] Create `shared/components/NavigationSection.tsx`:
+  - [ ] Section header with title and chevron (FiChevronRight/FiChevronDown)
+  - [ ] Use Chakra `Collapse` for smooth expand/collapse
+  - [ ] Support for nested items with proper indentation
+  - [ ] Manage section state (expanded/collapsed) in component or store
+  - [ ] Visual hierarchy: Section headers slightly smaller/muted vs items
+
+**Props**: `title: string`, `children: ReactNode`, `isCollapsed: boolean`, `defaultExpanded?: boolean`
+
+### Task 2.5: Add Icon-Only Mode with Tooltips
+- [ ] Enhance navigation items to show tooltips when collapsed:
+  - [ ] Use Chakra `Tooltip` component wrapped around items
+  - [ ] Show full label text in tooltip when sidebar is collapsed
+  - [ ] Position tooltips to the right: `placement="right"`
+  - [ ] Only show tooltips when collapsed (`!isExpanded && !isHovered`)
+  - [ ] Proper accessibility: `aria-label` attributes
+
+## Phase 3: Layout Integration & Advanced Features
+
+### Task 3.1: Update Dashboard Layout for Content Adjustment
+- [ ] Modify `shared/layouts/Dashboard.tsx` to respond to sidebar state:
+  - [ ] Import navigation store: `const { isExpanded, isMobile } = useNavigationStore()`
+  - [ ] Conditionally add left margin to main content when sidebar is expanded
+  - [ ] Desktop: `ml={isExpanded && !isMobile ? "xs" : "16"}` to match sidebar widths
+  - [ ] Mobile: Keep `ml="0"` since sidebar is overlay
+  - [ ] Add smooth transitions: `transition="margin 0.2s ease"`
+
+**Key Changes**:
+- The `DashboardContent` component should adjust its margin based on sidebar state
+- Ensure toggle button is always accessible above content
+
+### Task 3.2: Add Mobile Overlay Backdrop
+- [ ] Create `shared/components/MobileOverlay.tsx`:
+  - [ ] Semi-transparent backdrop that appears when sidebar is open on mobile
+  - [ ] Use Chakra `Portal` to render outside normal DOM flow
+  - [ ] Click backdrop to close sidebar: `onClick={() => closeMobile()}`
+  - [ ] Smooth fade in/out animations using Chakra `Fade`
+  - [ ] Only visible when `isMobile && isExpanded`
+
+**Props**: Connect to navigation store for state and actions
+
+### Task 3.3: Integrate Toggle Button in Layout
+- [ ] Add `NavigationToggle` component to the main layout:
+  - [ ] Import in `Dashboard.tsx` or `__root.tsx`
+  - [ ] Position as fixed element that's always visible
+  - [ ] Ensure it's above sidebar z-index but below modals
+  - [ ] Consider mobile vs desktop positioning (always top-left is fine)
+
+### Task 3.4: Enhanced Navigation Items with Current Route Detection
+- [ ] Update `SidebarItems.tsx` to use existing TanStack Router logic:
+  - [ ] Keep existing `useRouterState()` and `currentPath` logic
+  - [ ] Enhance active state detection for nested routes/children
+  - [ ] Support parent item highlighting when child route is active
+  - [ ] Maintain existing active styling with primary color (`colorPalette.600`)
+
+**Example Enhancement**:
+```typescript
+const isActive = currentPath === path ||
+  (children && children.some(child => currentPath.startsWith(child.path)))
+```
+
+## Phase 4: Polish & Accessibility
+
+### Task 4.1: Smooth Animations & Micro-interactions
+- [ ] Add consistent transitions throughout navigation components:
+  - [ ] Sidebar width changes: `transition="width 0.2s ease-out"`
+  - [ ] Content margin adjustments: `transition="margin 0.2s ease-out"`
+  - [ ] Hover effects: `transition="all 0.15s ease-in-out"`
+  - [ ] Section expand/collapse: Use Chakra `Collapse` with `animateOpacity`
+- [ ] Toggle button icon morphing animation (Menu ↔ X)
+- [ ] Subtle hover effects for navigation items (already implemented, enhance if needed)
+
+### Task 4.2: Accessibility Enhancements
+- [ ] Add proper ARIA attributes:
+  - [ ] `role="navigation"` on main sidebar container
+  - [ ] `aria-label="Main navigation"` for sidebar
+  - [ ] `aria-expanded` for collapsible sections
+  - [ ] `aria-current="page"` for active navigation items
+  - [ ] `aria-label` for icon-only tooltips when collapsed
+- [ ] Keyboard navigation support:
+  - [ ] Ensure all interactive elements are keyboard accessible
+  - [ ] Toggle button activation with Enter/Space
+  - [ ] Escape key closes mobile sidebar
+  - [ ] Tab order flows logically through navigation items
+
+### Task 4.3: Responsive Polish
+- [ ] Fine-tune responsive breakpoints:
+  - [ ] Test sidebar behavior at tablet sizes (768px-1024px)
+  - [ ] Ensure hover behavior works well on devices that support it
+  - [ ] Touch-friendly targets on mobile (44px minimum)
+- [ ] Handle edge cases:
+  - [ ] Very narrow desktop screens
+  - [ ] Landscape mobile orientations
+  - [ ] High-DPI displays
+
+### Task 4.4: Theme Integration
+- [ ] Ensure navigation components work with existing app theme:
+  - [ ] Use consistent semantic color tokens (`bg.subtle`, `fg.muted`, etc.)
+  - [ ] Respect user's color mode preference (light/dark)
+  - [ ] Primary color highlighting uses theme's `colorPalette.600`
+  - [ ] Test appearance in both light and dark modes
+
+## Phase 5: Testing & Documentation
+
+### Task 5.1: Manual Testing Checklist
+- [ ] Desktop behavior:
+  - [ ] Toggle button shows/hides sidebar correctly
+  - [ ] Hover expands collapsed sidebar temporarily
+  - [ ] Content area adjusts width when sidebar expands
+  - [ ] Navigation items show active state correctly
+  - [ ] Collapsible sections work smoothly
+- [ ] Mobile behavior:
+  - [ ] Sidebar opens as full-screen overlay
+  - [ ] Backdrop closes sidebar when tapped
+  - [ ] Toggle button switches between menu/X icons
+  - [ ] No content margin adjustment on mobile
+- [ ] Accessibility testing:
+  - [ ] Screen reader compatibility
+  - [ ] Keyboard-only navigation
+  - [ ] Focus indicators visible
+  - [ ] Color contrast meets WCAG standards
+
+### Task 5.2: Integration Testing
+- [ ] Test with existing routes and navigation:
+  - [ ] Active states work with TanStack Router
+  - [ ] Navigation doesn't cause page reloads
+  - [ ] Nested routes highlight parent items correctly
+  - [ ] Direct URL access maintains proper active states
+- [ ] Test with existing layout components:
+  - [ ] No conflicts with header/navbar
+  - [ ] Proper stacking order with modals/dropdowns
+  - [ ] No layout shifts or jump effects
+
+### Task 5.3: Performance Verification
+- [ ] Check bundle size impact of new navigation code
+- [ ] Verify smooth 60fps animations on lower-end devices
+- [ ] Test navigation state persistence across page reloads
+- [ ] Ensure no memory leaks with store subscriptions
+
+### Task 5.4: Component Documentation
+- [ ] Add JSDoc comments to all new components
+- [ ] Document navigation store usage patterns
+- [ ] Create usage examples for collapsible sections
+- [ ] Update existing component exports if needed
+
+## Implementation Notes
+
+**Technical Stack**:
+- State Management: Zustand store in `shared/store/`
+- UI Framework: Chakra UI v3 (existing project setup)
+- Icons: React Icons (FiMenu, FiX, FiChevronRight, etc.)
+- Routing: TanStack Router (existing project setup)
+- Animation: Chakra UI transitions (`transition`, `Collapse`, `Fade`)
+
+**Key Architecture Decisions**:
+- Enhance existing components rather than rebuild from scratch
+- Maintain current routing and styling patterns
+- Use existing Dashboard layout structure with minimal changes
+- Keep existing semantic color tokens and theme system
+
+**Interaction Patterns**:
+- **Desktop**: Toggle button + hover-to-expand when collapsed
+- **Mobile**: Full overlay with backdrop tap-to-close
+- **Persistence**: Remember expanded/collapsed state in localStorage
+- **Loading**: Show loading states without page reloads (as requested)
+
+**Color & Theme Integration**:
+- Use existing semantic tokens: `bg.subtle`, `fg.muted`, `border.muted`
+- Primary highlight: `colorPalette.600` (matches `#2463eb`)
+- Respect light/dark mode from existing theme
+- Maintain visual consistency with current design
+
+**Responsive Strategy**:
+- Mobile: < 768px (full screen overlay)
+- Desktop: >= 768px (retractable sidebar with content adjustment)
+- Progressive enhancement: Works without JavaScript for basic navigation
+
+**Performance Considerations**:
+- Minimal bundle size increase (reuse existing components)
+- Smooth 60fps animations using CSS transforms
+- Efficient re-renders with proper state management
+- Lazy loading for future navigation enhancements
+
+This approach builds upon your existing navigation foundation to create a polished, professional retractable sidebar that integrates seamlessly with your current architecture while adding the advanced UX features you requested.
