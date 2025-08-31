@@ -325,6 +325,88 @@ const isActive = currentPath === path ||
 - [ ] Test smooth transitions and animations
 - [ ] Verify accessibility compliance across all breakpoint scenarios
 
+## Phase 4.6: Layout Refinement and Bug Fixes ⏳
+
+### Task 4.6: Fix Width Management and Compact Design Issues ✅
+**Priority**: High
+**Based on**: User feedback and visual comparison with design examples
+
+**Current Issues:**
+- Sidebar + main content may exceed 100vw causing horizontal overflow
+- Sidebar needs consistent min-width of 15vw
+- Text size and icons too large compared to design example
+- Nav items need more compact spacing to match screenshot
+- Toggle button click handler not working properly
+- Tablet overlay behavior not functioning correctly
+
+**Requirements:**
+
+#### 4.6.1: Width Management and Overflow Prevention ✅
+- **Sidebar width constraints**:
+  - Set min-width: 15vw for expanded sidebar
+  - Ensure collapsed width (64px) + expanded width (15vw) never exceeds 100vw
+  - Prevent any horizontal scrolling on large screens
+- **Content area calculations**:
+  - Large screen: content width = 100vw - sidebar width
+  - Tablet/Mobile: content width = 100vw (overlay doesn't affect layout)
+- **Responsive width formula**:
+  ```css
+  sidebar: min-width: 15vw, max-width: 15vw (expanded)
+  content: width: calc(100vw - 15vw) when expanded, 100vw when collapsed
+  ```
+
+#### 4.6.2: Compact Design Matching Screenshot ✅
+- **Text size reduction**:
+  - Navigation item text: reduce from current size to match `side_nav.png`
+  - Section headers: smaller, more subtle typography
+  - App name in navbar: appropriately sized
+- **Icon size optimization**:
+  - Navigation icons: reduce from 18px to 16px or smaller
+  - Toggle icon: ensure appropriate size for navbar
+  - Chevron icons: reduce to match overall scale
+- **Vertical spacing reduction**:
+  - Nav items: reduce padding from py={2} to py={1} or py={1.5}
+  - Gap between items: reduce from gap={0.5} to gap={0.25}
+  - Overall compact feel to match Linear-style design
+
+#### 4.6.3: Toggle Functionality Investigation and Fix ✅
+- **Use Playwright to investigate**:
+  - Test toggle button click behavior across breakpoints
+  - Verify event handlers are properly attached
+  - Check state changes in navigation store
+  - Document any console errors or issues
+- **Fix toggle button issues**:
+  - Ensure onClick handler is properly connected
+  - Verify state updates propagate correctly
+  - Test toggle visibility logic across breakpoints
+- **Tablet overlay behavior**:
+  - Ensure overlay appears when sidebar opens on tablet
+  - Verify backdrop click closes sidebar
+  - Test z-index stacking order
+
+#### 4.6.4: Implementation Files Updated ✅
+- [x] `src/shared/components/Sidebar.tsx`: Fixed width constraints (15vw expanded, 64px collapsed)
+- [x] `src/shared/components/SidebarItems.tsx`: Reduced text sizes (xs), icon sizes (14px), and padding (py=1.5)
+- [x] `src/shared/components/NavigationToggle.tsx`: Investigated and confirmed working correctly
+- [x] `src/shared/layouts/Dashboard.tsx`: Updated width calculations using 64px for collapsed state
+- [x] `src/shared/components/Navbar.tsx`: Adjusted text sizes for compact design
+
+**Success Criteria:**
+- [x] No horizontal overflow on any screen size (sidebar + content ≤ 100vw)
+- [x] Sidebar min-width consistently 15vw when expanded
+- [x] Text and icon sizes reduced to match compact design (xs text, 14px icons)
+- [x] Nav items have compact spacing (py=1.5, gap=0.25)
+- [x] Toggle button works correctly on all breakpoints (tested with Playwright)
+- [x] Tablet overlay behavior functions properly
+- [x] Smooth animations preserved throughout fixes
+
+**Testing Plan:**
+- [x] Use Playwright to test toggle functionality across breakpoints
+- [x] Test width calculations at various screen sizes
+- [x] Verify no horizontal scrolling occurs
+- [x] Compare visual design with provided screenshot
+- [x] Test overlay behavior on tablet specifically
+
 ## Phase 5: Testing & Documentation
 
 ### Task 5.1: Manual Testing Checklist

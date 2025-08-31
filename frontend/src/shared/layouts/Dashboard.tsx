@@ -29,7 +29,7 @@ function DashboardHeader() {
     if (isMobile) return "0" // Mobile: no margin (overlay)
     if (isLarge && isExpanded) return "15vw" // Large: use 15vw when expanded
     if (isTablet && isExpanded) return "15vw" // Tablet: use 15vw when expanded
-    return "16" // Collapsed: use icon width (64px)
+    return "64px" // Collapsed: use icon width (64px)
   }
 
   return (
@@ -57,7 +57,7 @@ function DashboardContent({ children }: DashboardContentProps) {
     if (isMobile) return "0" // Mobile: no margin (overlay)
     if (isLarge && isExpanded) return "15vw" // Large: use 15vw when expanded
     if (isTablet && isExpanded) return "15vw" // Tablet: use 15vw when expanded
-    return "16" // Collapsed: use icon width (64px)
+    return "64px" // Collapsed: use icon width (64px)
   }
 
   return (

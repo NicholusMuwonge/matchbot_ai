@@ -19,7 +19,7 @@ function Navbar() {
       <Flex align="center" gap={3}>
         <NavigationToggle variant="ghost" size="sm" />
         <Link to="/">
-          <Text fontSize="lg" fontWeight="semibold" color="fg.default">
+          <Text fontSize="md" fontWeight="medium" color="fg.default">
             MatchBot AI
           </Text>
         </Link>

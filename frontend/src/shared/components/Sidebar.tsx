@@ -10,7 +10,7 @@ const Sidebar = () => {
   const getWidth = () => {
     if (isMobile) return "full"
     if (isExpanded || isHovered) return "15vw"
-    return "16"
+    return "64px" // 16 * 4px = 64px for collapsed state
   }
 
   const getZIndex = () => {

@@ -105,7 +105,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
         align="center"
         gap={3}
         px={isChild ? 6 : 3}
-        py={2}
+        py={1.5}
         borderRadius="md"
         cursor="pointer"
         bg={isActive ? "bg.emphasized" : "transparent"}
@@ -122,17 +122,17 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
       >
         <Icon
           as={item.icon}
-          boxSize="18px"
+          boxSize="14px"
           color={isActive ? "colorPalette.600" : "inherit"}
           flexShrink={0}
         />
         {!isCollapsed && (
           <>
-            <Text fontSize="sm" flex="1">
+            <Text fontSize="xs" flex="1">
               {item.title}
             </Text>
             {item.badge && (
-              <Badge size="sm" colorPalette="primary" variant="subtle">
+              <Badge size="xs" colorPalette="primary" variant="subtle">
                 {item.badge}
               </Badge>
             )}
@@ -186,7 +186,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
       <Box key={item.title}>
         <HStack
           px={3}
-          py={2}
+          py={1.5}
           cursor="pointer"
           onClick={() => toggleSection(item.title)}
           _hover={{
@@ -207,17 +207,17 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
         >
           <Icon
             as={isExpanded ? FiChevronDown : FiChevronRight}
-            boxSize="14px"
+            boxSize="12px"
             color="fg.muted"
             transition="transform 0.2s ease"
           />
           <Icon
             as={item.icon}
-            boxSize="18px"
+            boxSize="14px"
             color={isActive ? "colorPalette.600" : "fg.muted"}
           />
           <Text
-            fontSize="sm"
+            fontSize="xs"
             fontWeight={isActive ? "medium" : "normal"}
             color={isActive ? "fg.default" : "fg.muted"}
             flex="1"
@@ -225,14 +225,14 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
             {item.title}
           </Text>
           {item.badge && (
-            <Badge size="sm" colorPalette="primary" variant="subtle">
+            <Badge size="xs" colorPalette="primary" variant="subtle">
               {item.badge}
             </Badge>
           )}
         </HStack>
         <Collapsible.Root open={isExpanded}>
           <Collapsible.Content>
-            <VStack align="stretch" gap={1} ml={2}>
+            <VStack align="stretch" gap={0.25} ml={2}>
               {item.children?.map((child) => renderNavigationItem(child, true))}
             </VStack>
           </Collapsible.Content>
@@ -249,14 +249,14 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   })
 
   return (
-    <VStack align="stretch" gap={0.5} role="menu" aria-label="Navigation menu">
+    <VStack align="stretch" gap={0.25} role="menu" aria-label="Navigation menu">
       {!isCollapsed && (
         <Text
-          fontSize="xs"
-          fontWeight="semibold"
+          fontSize="2xs"
+          fontWeight="medium"
           color="fg.subtle"
           px={3}
-          py={2}
+          py={1.5}
           textTransform="uppercase"
           letterSpacing="wider"
           role="heading"
@@ -265,7 +265,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
           Navigation
         </Text>
       )}
-      <VStack align="stretch" gap={0.5}>
+      <VStack align="stretch" gap={0.25}>
         {listItems}
       </VStack>
     </VStack>
