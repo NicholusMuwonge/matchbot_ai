@@ -3,9 +3,21 @@ import { useEffect } from "react"
 import { FiMenu, FiX } from "react-icons/fi"
 import { useNavigationStoreWithBreakpoint } from "../store/navigation-store"
 
-const NavigationToggle = () => {
-  const { isExpanded, isMobile, actions } = useNavigationStoreWithBreakpoint()
+interface NavigationToggleProps {
+  variant?: "solid" | "ghost" | "outline"
+  size?: "sm" | "md" | "lg"
+}
+
+const NavigationToggle = ({
+  variant = "ghost",
+  size = "md",
+}: NavigationToggleProps) => {
+  const { isExpanded, isMobile, isLarge, actions } =
+    useNavigationStoreWithBreakpoint()
   const { toggleSidebar, closeMobile } = actions
+
+  // Don't show toggle on large screens
+  const shouldShow = !isLarge
 
   // Escape key closes mobile sidebar
   useEffect(() => {
@@ -30,17 +42,15 @@ const NavigationToggle = () => {
     return "Open navigation menu"
   }
 
+  if (!shouldShow) return null
+
   return (
     <IconButton
       aria-label={getAriaLabel()}
       onClick={toggleSidebar}
-      position="fixed"
-      top="4"
-      left="4"
-      zIndex="banner"
       colorPalette="primary"
-      size="md"
-      variant="solid"
+      size={size}
+      variant={variant}
       transition="all 0.15s ease-in-out"
       _hover={{
         transform: "scale(1.05)",

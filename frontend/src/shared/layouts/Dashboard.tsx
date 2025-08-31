@@ -1,12 +1,7 @@
 import { Box, Flex } from "@chakra-ui/react"
 import type { ReactNode } from "react"
 
-import {
-  MobileOverlay,
-  Navbar,
-  NavigationToggle,
-  Sidebar,
-} from "@/shared/components"
+import { MobileOverlay, Navbar, Sidebar } from "@/shared/components"
 import { useNavigationStoreWithBreakpoint } from "@/shared/store/navigation-store"
 
 interface DashboardProps {
@@ -16,7 +11,6 @@ interface DashboardProps {
 function Dashboard({ children }: DashboardProps) {
   return (
     <Flex minH="100vh" bg="bg.default" data-testid="dashboard-layout">
-      <NavigationToggle />
       <MobileOverlay />
       {children}
     </Flex>
@@ -28,24 +22,20 @@ function DashboardSidebar() {
 }
 
 function DashboardHeader() {
-  const { isExpanded, isMobile } = useNavigationStoreWithBreakpoint()
+  const { isExpanded, isMobile, isTablet, isLarge } =
+    useNavigationStoreWithBreakpoint()
 
   const getMarginLeft = () => {
-    if (isMobile) return "0"
-    if (isExpanded) return "xs"
-    return "16"
+    if (isMobile) return "0" // Mobile: no margin (overlay)
+    if (isLarge && isExpanded) return "15vw" // Large: use 15vw when expanded
+    if (isTablet && isExpanded) return "15vw" // Tablet: use 15vw when expanded
+    return "16" // Collapsed: use icon width (64px)
   }
 
   return (
     <Flex
       as="header"
-      justify="flex-end"
-      align="center"
-      bg="bg.default"
-      px={6}
-      py={4}
-      borderBottom="1px"
-      borderColor="border.muted"
+      w="100%"
       ml={getMarginLeft()}
       transition="margin 0.2s ease-out"
       data-testid="dashboard-header"
@@ -60,12 +50,14 @@ interface DashboardContentProps {
 }
 
 function DashboardContent({ children }: DashboardContentProps) {
-  const { isExpanded, isMobile } = useNavigationStoreWithBreakpoint()
+  const { isExpanded, isMobile, isTablet, isLarge } =
+    useNavigationStoreWithBreakpoint()
 
   const getMarginLeft = () => {
-    if (isMobile) return "0"
-    if (isExpanded) return "xs"
-    return "16"
+    if (isMobile) return "0" // Mobile: no margin (overlay)
+    if (isLarge && isExpanded) return "15vw" // Large: use 15vw when expanded
+    if (isTablet && isExpanded) return "15vw" // Tablet: use 15vw when expanded
+    return "16" // Collapsed: use icon width (64px)
   }
 
   return (

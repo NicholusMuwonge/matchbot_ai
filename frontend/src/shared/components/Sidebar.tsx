@@ -13,6 +13,11 @@ const Sidebar = () => {
     return "16"
   }
 
+  const getZIndex = () => {
+    if (isMobile) return "tooltip" // Above overlay on mobile
+    return "sticky" // Standard stacking on desktop/tablet
+  }
+
   const shouldShow = isMobile ? isExpanded : true
 
   if (!shouldShow) return null
@@ -32,11 +37,11 @@ const Sidebar = () => {
       borderRight="1px"
       borderColor="border.muted"
       transition="width 0.2s ease-out"
-      zIndex={isMobile ? "tooltip" : "sticky"}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      zIndex={getZIndex()}
+      onMouseEnter={() => !isMobile && setHovered(true)}
+      onMouseLeave={() => !isMobile && setHovered(false)}
     >
-      <Box w="100%">
+      <Box w="100%" mt={isMobile ? 0 : 16}>
         <SidebarItems />
       </Box>
     </Box>

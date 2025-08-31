@@ -1,24 +1,31 @@
-import { Flex, useBreakpointValue } from "@chakra-ui/react"
+import { Flex, Text } from "@chakra-ui/react"
 import { Link } from "@tanstack/react-router"
+import NavigationToggle from "./NavigationToggle"
 import UserMenu from "./UserMenu"
 
 function Navbar() {
-  const display = useBreakpointValue({ base: "none", md: "flex" })
-
   return (
     <Flex
-      display={display}
       justify="space-between"
-      position="sticky"
-      color="white"
       align="center"
       bg="bg.muted"
       w="100%"
-      top={0}
-      p={4}
+      px={4}
+      py={3}
+      borderBottom="1px"
+      borderColor="border.muted"
     >
-      <Link to="/" />
+      {/* Left section: Toggle button and App name */}
+      <Flex align="center" gap={3}>
+        <NavigationToggle variant="ghost" size="sm" />
+        <Link to="/">
+          <Text fontSize="lg" fontWeight="semibold" color="fg.default">
+            MatchBot AI
+          </Text>
+        </Link>
+      </Flex>
 
+      {/* Right section: User menu and other controls */}
       <Flex gap={2} alignItems="center">
         <UserMenu />
       </Flex>

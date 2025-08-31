@@ -227,6 +227,104 @@ const isActive = currentPath === path ||
   - [ ] Primary color highlighting uses theme's `colorPalette.600`
   - [ ] Test appearance in both light and dark modes
 
+## Phase 4.5: Responsive Navigation Behavior Refinement ✅
+
+### Task 4.5: Implement Responsive Default States and Top Navigation Integration ✅
+**Priority**: High
+**Based on**: Analysis of navigation examples showing Linear-style responsive behavior
+
+**Current Issues:**
+- Sidebar defaults to collapsed on all screen sizes (should be open on large screens)
+- Toggle button is fixed position (should be integrated into top navigation)
+- Only 2 breakpoints: mobile/desktop (needs 3: mobile/tablet/large)
+- Toggle always visible (should be hidden on large screens)
+
+**Requirements:**
+
+#### 4.5.1: Responsive Breakpoint Strategy ✅
+- **Large screens (≥ 1024px / lg+)**:
+  - Sidebar: Open by default (`isExpanded: true`)
+  - Toggle: Hidden (no toggle needed)
+  - Content: Adjusts margin for sidebar
+- **Tablet screens (768px - 1023px / md-lg)**:
+  - Sidebar: Closed by default (`isExpanded: false`)
+  - Toggle: Visible in top navigation
+  - Content: Full width when closed, adjusts when opened
+- **Mobile screens (< 768px / < md)**:
+  - Sidebar: Closed by default, overlay when opened
+  - Toggle: Visible in top navigation
+  - Content: Always full width (no margin adjustment)
+
+#### 4.5.2: Navigation Store Updates ✅
+- [x] **Add new breakpoint detection**:
+  - `isLarge`: ≥ lg breakpoint (1024px+)
+  - `isTablet`: md to lg (768px - 1023px)
+  - `isMobile`: < md (< 768px)
+- [x] **Update default state logic**:
+  - Responsive defaults based on screen size: large=true, tablet=false
+- [x] **Add initialization logic**:
+  - On first load or breakpoint change, set appropriate default state
+  - Preserve user preference within same breakpoint category
+- [x] **Update persistence strategy**:
+  - Store user preference per breakpoint category
+  - Don't persist mobile state (always overlay)
+
+#### 4.5.3: Top Navigation Integration ✅
+- [x] **Update Navbar component**:
+  - Remove `display: { base: "none", md: "flex" }` - now shows on all sizes
+  - Add left section for toggle button
+  - Structure: `[Toggle Button] [App Logo/Name] [Spacer] [User Menu]`
+- [x] **Remove fixed positioning from NavigationToggle**:
+  - Remove `position="fixed"`, `top="4"`, `left="4"`
+  - Convert to inline component for navbar
+- [x] **Toggle visibility logic**:
+  - `const showToggle = !isLarge` - Hidden on large screens only
+
+#### 4.5.4: Layout Component Updates ✅
+- [x] **Dashboard.tsx updates**:
+  - Remove `<NavigationToggle />` from main layout (moved to navbar)
+  - Update margin calculations to account for new breakpoints
+- [x] **DashboardHeader updates**:
+  - Pass toggle visibility state to Navbar
+  - Adjust margin calculations for 3-tier breakpoint system
+- [x] **DashboardContent updates**:
+  - Update margin logic: `isLarge && isExpanded ? "15vw" : isTablet && isExpanded ? "15vw" : isMobile ? "0" : "16"`
+
+#### 4.5.5: Enhanced User Experience ✅
+- [x] **Smooth transitions between breakpoints**:
+  - When resizing from large → tablet: sidebar closes automatically
+  - When resizing from tablet → large: sidebar opens automatically (if user hasn't explicitly closed it)
+  - Preserve user intent within breakpoint categories
+- [x] **Visual feedback**:
+  - Toggle button shows current state (different icons for open/closed)
+  - Smooth animations for all state changes
+- [x] **Accessibility**:
+  - Toggle button has proper ARIA labels for each breakpoint context
+  - Keyboard navigation works across all breakpoint scenarios
+
+#### 4.5.6: Implementation Files Updated ✅
+- [x] `src/shared/store/navigation-store.ts`: Added 3-tier breakpoint detection and responsive defaults
+- [x] `src/shared/components/Navbar.tsx`: Integrated toggle button, updated responsive behavior
+- [x] `src/shared/components/NavigationToggle.tsx`: Converted from fixed to inline component
+- [x] `src/shared/layouts/Dashboard.tsx`: Removed fixed toggle, updated margin calculations
+- [x] `src/shared/components/Sidebar.tsx`: Updated width calculation for new 15vw limit
+
+**Success Criteria:**
+- [x] Large screens: Sidebar open by default, no toggle visible
+- [x] Tablet screens: Sidebar closed by default, toggle in top nav
+- [x] Mobile screens: Sidebar overlay only, toggle in top nav
+- [x] Smooth automatic behavior changes when resizing between breakpoints
+- [x] User preferences preserved within each breakpoint category
+- [x] All existing functionality (hover, keyboard nav, accessibility) preserved
+
+**Testing Requirements:**
+- [ ] Test automatic behavior at 1024px breakpoint (large ↔ tablet)
+- [ ] Test automatic behavior at 768px breakpoint (tablet ↔ mobile)
+- [ ] Test user preference persistence within each breakpoint category
+- [ ] Test toggle visibility and functionality across all breakpoints
+- [ ] Test smooth transitions and animations
+- [ ] Verify accessibility compliance across all breakpoint scenarios
+
 ## Phase 5: Testing & Documentation
 
 ### Task 5.1: Manual Testing Checklist
