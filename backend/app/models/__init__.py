@@ -4,6 +4,7 @@ Models package for the application.
 
 from .base import Message, NewPassword, Token, TokenPayload
 from .item import Item, ItemBase, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate
+from .rbac import Role, UserRole
 from .user import (
     UpdatePassword,
     User,
@@ -50,4 +51,7 @@ __all__ = [
     "WebhookStateMachine",
     "WebhookStatus",
     "WebhookTransitionError",
+    # RBAC models
+    "Role",
+    "UserRole",
 ]
