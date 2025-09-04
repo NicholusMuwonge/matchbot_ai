@@ -12,6 +12,6 @@ def test_init_successful_connection() -> None:
         print(f"Database connection failed: {database_error}")
         connection_successful = False
 
-    assert connection_successful, (
-        "The database connection should be successful and not raise an exception."
-    )
+    assert (
+        connection_successful
+    ), "The database connection should be successful and not raise an exception."

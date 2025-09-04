@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.routes import (
     admin,
     auth,
+    dev,
     items,
     login,
     private,
@@ -26,3 +27,7 @@ api_router.include_router(items.router)
 
 if settings.ENVIRONMENT == "local":
     api_router.include_router(private.router)
+
+# Development routes for testing (only when test auth is enabled)
+if settings.ENABLE_AUTH_TESTING:
+    api_router.include_router(dev.router)
