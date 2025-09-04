@@ -68,15 +68,20 @@ def get_current_user_session(request: Request, session: SessionDep) -> User:
 ClerkSessionUser = Annotated[User, Depends(get_current_user_session)]
 
 
-def _check_user_permissions(user: User, session: Session, required_permissions: list[str]) -> bool:
+def _check_user_permissions(
+    user: User, session: Session, required_permissions: list[str]
+) -> bool:
     """Helper function to check if user has any of the required permissions."""
     user_role_service = UserRoleService()
     user_roles = user_role_service.get_user_roles(session, user.id)
-    
+
     role_service = RoleService()
     for user_role in user_roles:
         role = role_service.get_role(session, user_role.role_id)
-        if role and ("*" in role.permissions or any(perm in role.permissions for perm in required_permissions)):
+        if role and (
+            "*" in role.permissions
+            or any(perm in role.permissions for perm in required_permissions)
+        ):
             return True
     return False
 
@@ -85,7 +90,7 @@ def _check_user_roles(user: User, session: Session, required_roles: list[str]) -
     """Helper function to check if user has any of the required roles."""
     user_role_service = UserRoleService()
     user_roles = user_role_service.get_user_roles(session, user.id)
-    
+
     role_service = RoleService()
     for user_role in user_roles:
         role = role_service.get_role(session, user_role.role_id)
@@ -96,32 +101,33 @@ def _check_user_roles(user: User, session: Session, required_roles: list[str]) -
 
 def require_permission(permission: str):
     """Create dependency that checks if user has specific permission."""
-    def dependency(current_user: ClerkSessionUser, session: SessionDep) -> User:
+
+    def dependency(current_user: ClerkSessionUser, session: Annotated[Session, Depends(get_db)]) -> User:
         if _check_user_permissions(current_user, session, [permission]):
             return current_user
-        
+
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Permission '{permission}' required"
+            detail=f"Permission '{permission}' required",
         )
-    
+
     return Annotated[User, Depends(dependency)]
 
 
 def require_role(roles: str | list[str]):
     """Create dependency that checks if user has required role(s)."""
     role_names = [roles] if isinstance(roles, str) else roles
-    
-    def dependency(current_user: ClerkSessionUser, session: SessionDep) -> User:
+
+    def dependency(current_user: ClerkSessionUser, session: Annotated[Session, Depends(get_db)]) -> User:
         if _check_user_roles(current_user, session, role_names):
             return current_user
-        
+
         role_list = ", ".join(f"'{r}'" for r in role_names)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"One of these roles required: {role_list}"
+            detail=f"One of these roles required: {role_list}",
         )
-    
+
     return Annotated[User, Depends(dependency)]
 
 

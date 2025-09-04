@@ -11,9 +11,10 @@ import logging
 from typing import Any
 
 from clerk_backend_api import Clerk
+from sqlmodel import Session
 
 from app.core.config import settings
-from app.core.database import SessionLocal
+from app.core.db import engine
 from app.services.role_assignment_service import RoleAssignmentService
 from app.webhooks.clerk_webhooks import ClerkWebhookProcessor
 
@@ -45,7 +46,7 @@ class EnhancedClerkWebhookProcessor(ClerkWebhookProcessor):
         try:
             sync_result = await super()._process_user_created(user_data)
 
-            with SessionLocal() as session:
+            with Session(engine) as session:
                 user = self.user_sync_service.find_user_by_clerk_id(
                     session, clerk_user_id
                 )

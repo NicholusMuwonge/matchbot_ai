@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlmodel import Session
 
-from app.api.deps import SessionDep
+from app.api.deps import get_db
 from app.api.test_auth import setup_test_users
 from app.core.config import settings
 
@@ -18,7 +19,7 @@ class TestSetupResponse(BaseModel):
 
 
 @router.post("/setup-test-users", response_model=TestSetupResponse)
-async def setup_test_users_endpoint(session: SessionDep) -> TestSetupResponse:
+async def setup_test_users_endpoint(session: Annotated[Session, Depends(get_db)]) -> TestSetupResponse:
     """
     Create test users for authentication testing.
 

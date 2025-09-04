@@ -1,17 +1,15 @@
 import uuid
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlmodel import col, delete, func, select
+from sqlmodel import Session, col, delete, func, select
 
 from app import crud
 from app.api.deps import (
-    AdminUser,
     ClerkSessionUser,
-    CurrentUser,
-    SessionDep,
-    get_current_active_superuser,
+    get_db,
+    require_role,
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
@@ -43,12 +41,10 @@ class UserSyncResponse(BaseModel):
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get(
-    "/",
-    dependencies=[Depends(get_current_active_superuser)],
-    response_model=UsersPublic,
-)
-def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
+@router.get("/", response_model=UsersPublic)
+def read_users(
+    session: Annotated[Session, Depends(get_db)], _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))], skip: int = 0, limit: int = 100
+) -> Any:
     """
     Retrieve users.
     """
@@ -62,10 +58,8 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
     return UsersPublic(data=users, count=count)
 
 
-@router.post(
-    "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
-)
-def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
+@router.post("/", response_model=UserPublic)
+def create_user(*, session: Annotated[Session, Depends(get_db)], _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))], user_in: UserCreate) -> Any:
     """
     Create new user.
     """
@@ -91,7 +85,7 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
 
 @router.patch("/me", response_model=UserPublic)
 def update_user_me(
-    *, session: SessionDep, user_in: UserUpdateMe, current_user: CurrentUser
+    *, session: Annotated[Session, Depends(get_db)], user_in: UserUpdateMe, current_user: ClerkSessionUser
 ) -> Any:
     """
     Update own user.
@@ -113,7 +107,7 @@ def update_user_me(
 
 @router.patch("/me/password", response_model=Message)
 def update_password_me(
-    *, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
+    *, session: Annotated[Session, Depends(get_db)], body: UpdatePassword, current_user: ClerkSessionUser
 ) -> Any:
     """
     Update own password.
@@ -132,7 +126,7 @@ def update_password_me(
 
 
 @router.get("/me", response_model=UserPublic)
-def read_user_me(current_user: CurrentUser) -> Any:
+def read_user_me(current_user: ClerkSessionUser) -> Any:
     """
     Get current user.
     """
@@ -140,7 +134,7 @@ def read_user_me(current_user: CurrentUser) -> Any:
 
 
 @router.delete("/me", response_model=Message)
-def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
+def delete_user_me(session: Annotated[Session, Depends(get_db)], current_user: ClerkSessionUser) -> Any:
     """
     Delete own user (regular users only - admins cannot delete themselves).
     """
@@ -150,7 +144,7 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
 
 
 @router.delete("/admin/me", response_model=Message)
-def delete_admin_user_me(_: SessionDep, __: AdminUser) -> Any:
+def delete_admin_user_me(_: Annotated[Session, Depends(get_db)], __: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> Any:
     """
     Admin users are not allowed to delete themselves for security.
     """
@@ -160,7 +154,7 @@ def delete_admin_user_me(_: SessionDep, __: AdminUser) -> Any:
 
 
 @router.post("/signup", response_model=UserPublic)
-def register_user(session: SessionDep, user_in: UserRegister) -> Any:
+def register_user(session: Annotated[Session, Depends(get_db)], user_in: UserRegister) -> Any:
     """
     Create new user without the need to be logged in.
     """
@@ -177,7 +171,7 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
 
 @router.get("/{user_id}", response_model=UserPublic)
 def read_user_by_id(
-    user_id: uuid.UUID, session: SessionDep, current_user: ClerkSessionUser
+    user_id: uuid.UUID, session: Annotated[Session, Depends(get_db)], current_user: ClerkSessionUser
 ) -> Any:
     """
     Get a specific user by id (only yourself).
@@ -194,9 +188,7 @@ def read_user_by_id(
 
 
 @router.get("/admin/{user_id}", response_model=UserPublic)
-def read_any_user_by_id(
-    user_id: uuid.UUID, session: SessionDep, _: AdminUser
-) -> Any:
+def read_any_user_by_id(user_id: uuid.UUID, session: Annotated[Session, Depends(get_db)], _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> Any:
     """
     Admin-only: Get any user by id.
     """
@@ -206,14 +198,11 @@ def read_any_user_by_id(
     return user
 
 
-@router.patch(
-    "/{user_id}",
-    dependencies=[Depends(get_current_active_superuser)],
-    response_model=UserPublic,
-)
+@router.patch("/{user_id}", response_model=UserPublic)
 def update_user(
     *,
-    session: SessionDep,
+    session: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
     user_id: uuid.UUID,
     user_in: UserUpdate,
 ) -> Any:
@@ -238,9 +227,9 @@ def update_user(
     return db_user
 
 
-@router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
+@router.delete("/{user_id}")
 def delete_user(
-    session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
+    session: Annotated[Session, Depends(get_db)], current_user: ClerkSessionUser, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))], user_id: uuid.UUID
 ) -> Message:
     """
     Delete a user.
@@ -264,9 +253,7 @@ def delete_user(
     "/clerk/sync/{clerk_user_id}",
     response_model=UserSyncResponse,
 )
-async def sync_user_from_clerk(
-    clerk_user_id: str, _: AdminUser
-) -> UserSyncResponse:
+async def sync_user_from_clerk(clerk_user_id: str, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> UserSyncResponse:
     """
     Manually trigger user sync from Clerk (Admin only).
 
@@ -296,7 +283,7 @@ async def sync_user_from_clerk(
     "/clerk/sync-by-email/{email}",
     response_model=UserSyncResponse | Message,
 )
-async def sync_user_by_email(email: str, _: AdminUser) -> Any:
+async def sync_user_by_email(email: str, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> Any:
     """
     Find and sync user by email from Clerk (Admin only).
 
@@ -324,7 +311,7 @@ async def sync_user_by_email(email: str, _: AdminUser) -> Any:
 @router.get(
     "/clerk/sync-stats",
 )
-async def get_clerk_sync_stats(_: AdminUser) -> dict[str, int]:
+async def get_clerk_sync_stats(_: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> dict[str, int]:
     """
     Get Clerk user synchronization statistics (Admin only).
 

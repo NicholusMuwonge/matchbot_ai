@@ -3,12 +3,13 @@ Webhook routes for Clerk integration
 Handles incoming webhooks from Clerk for user events
 """
 
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
+from sqlmodel import Session
 
-from app.api.deps import SessionDep
+from app.api.deps import get_db
 from app.webhooks.clerk_webhooks import process_clerk_webhook
 
 router = APIRouter()
@@ -26,7 +27,7 @@ class WebhookResponse(BaseModel):
 @router.post("/clerk", response_model=WebhookResponse)
 async def handle_clerk_webhook(
     request: Request,
-    session: SessionDep,
+    session: Annotated[Session, Depends(get_db)],
     svix_id: str = Header(None, alias="svix-id"),
     svix_timestamp: str = Header(None, alias="svix-timestamp"),
     svix_signature: str = Header(None, alias="svix-signature"),
@@ -71,7 +72,7 @@ async def handle_clerk_webhook(
 
 
 @router.get("/status/{webhook_id}")
-async def get_webhook_status(webhook_id: str, session: SessionDep) -> dict[str, Any]:
+async def get_webhook_status(webhook_id: str, session: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
     """
     Get the status of a specific webhook processing
     """
@@ -102,7 +103,7 @@ async def get_webhook_status(webhook_id: str, session: SessionDep) -> dict[str, 
 
 
 @router.get("/failed")
-async def get_failed_webhooks(session: SessionDep, limit: int = 50) -> dict[str, Any]:
+async def get_failed_webhooks(session: Annotated[Session, Depends(get_db)], limit: int = 50) -> dict[str, Any]:
     """
     Get list of failed webhooks that might need manual intervention
     """
@@ -135,7 +136,7 @@ async def get_failed_webhooks(session: SessionDep, limit: int = 50) -> dict[str,
 
 
 @router.post("/retry/{webhook_id}")
-async def retry_failed_webhook(webhook_id: str, session: SessionDep) -> WebhookResponse:
+async def retry_failed_webhook(webhook_id: str, session: Annotated[Session, Depends(get_db)]) -> WebhookResponse:
     """
     Manually retry a failed webhook processing
     """
@@ -181,7 +182,7 @@ async def retry_failed_webhook(webhook_id: str, session: SessionDep) -> WebhookR
 
 
 @router.get("/stats")
-async def get_webhook_stats(session: SessionDep) -> dict[str, Any]:
+async def get_webhook_stats(session: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
     """
     Get webhook processing statistics
     """

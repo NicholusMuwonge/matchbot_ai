@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.api.deps import AdminUser
+from app.api.deps import require_role
+from app.models import User
 from app.services.clerk_auth import ClerkAuthenticationError, ClerkService
 
 router = APIRouter()
@@ -51,7 +52,7 @@ class OAuthTokenResponse(BaseModel):
 
 @router.post("/sign-in-tokens", response_model=SignInTokenResponse)
 async def create_sign_in_token(
-    token_data: SignInTokenCreate, _: AdminUser
+    token_data: SignInTokenCreate, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]
 ) -> SignInTokenResponse:
     try:
         clerk_service = ClerkService()
@@ -82,7 +83,7 @@ async def create_sign_in_token(
 
 @router.post("/jwt-templates", response_model=JWTTemplateResponse)
 async def create_jwt_template(
-    template_data: JWTTemplateCreate, _: AdminUser
+    template_data: JWTTemplateCreate, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]
 ) -> JWTTemplateResponse:
     try:
         clerk_service = ClerkService()
@@ -114,7 +115,7 @@ async def create_jwt_template(
 
 @router.post("/oauth/verify", response_model=OAuthTokenResponse)
 async def verify_oauth_token(
-    token_data: OAuthTokenVerify, _: AdminUser
+    token_data: OAuthTokenVerify, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]
 ) -> OAuthTokenResponse:
     try:
         clerk_service = ClerkService()
@@ -140,7 +141,7 @@ async def verify_oauth_token(
 
 
 @router.get("/health")
-async def admin_health_check(_: AdminUser) -> dict[str, str]:
+async def admin_health_check(_: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> dict[str, str]:
     try:
         clerk_service = ClerkService()
 
