@@ -1,23 +1,13 @@
 from collections.abc import Generator
 from typing import Annotated
 
-import jwt
 from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPBearer, OAuth2PasswordBearer
-from jwt.exceptions import InvalidTokenError
-from pydantic import ValidationError
 from sqlmodel import Session
 
-from app.core import security
-from app.core.config import settings
 from app.core.db import engine
-from app.models import TokenPayload, User
+from app.models import User
 from app.services.clerk_auth import ClerkAuthenticationError, ClerkService
 from app.services.user_sync_service import UserSyncService
-
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/login/access-token"
-)
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -26,120 +16,8 @@ def get_db() -> Generator[Session, None, None]:
 
 
 SessionDep = Annotated[Session, Depends(get_db)]
-TokenDep = Annotated[str, Depends(reusable_oauth2)]
 
 
-def get_current_user(session: SessionDep, token: TokenDep) -> User:
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
-        )
-        token_data = TokenPayload(**payload)
-    except (InvalidTokenError, ValidationError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials",
-        )
-    user = session.get(User, token_data.sub)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return user
-
-
-CurrentUser = Annotated[User, Depends(get_current_user)]
-
-
-def get_current_active_superuser(current_user: CurrentUser) -> User:
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
-        )
-    return current_user
-
-
-# Clerk Authentication Dependencies
-clerk_bearer = HTTPBearer()
-
-ClerkTokenDep = Annotated[str, Depends(clerk_bearer)]
-
-
-def get_clerk_current_user(
-    session: SessionDep, credentials: Annotated[HTTPBearer, Depends(clerk_bearer)]
-) -> User:
-    """
-    Get current user using Clerk session token validation
-    """
-    try:
-        token = credentials.credentials
-
-        # Validate session with Clerk
-        clerk_service = ClerkService()
-        session_data = clerk_service.validate_session_token(token)
-
-        if not session_data.get("valid"):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired session token",
-            )
-
-        clerk_user_id = session_data.get("user_id")
-        if not clerk_user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid session - no user ID",
-            )
-
-        # Get or sync user from database
-        from sqlmodel import select
-
-        statement = select(User).where(User.clerk_user_id == clerk_user_id)
-        user = session.exec(statement).first()
-
-        if not user:
-            # Try to sync user from Clerk
-            sync_service = UserSyncService()
-            sync_result = sync_service.fetch_and_sync_user(clerk_user_id)
-
-            if sync_result and sync_result.get("user_id"):
-                user = session.get(User, sync_result["user_id"])
-
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found in database")
-
-        if not user.is_active:
-            raise HTTPException(status_code=400, detail="User account is inactive")
-
-        return user
-
-    except ClerkAuthenticationError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Authentication error: {str(e)}",
-        )
-
-
-ClerkCurrentUser = Annotated[User, Depends(get_clerk_current_user)]
-
-
-def get_clerk_current_active_superuser(current_user: ClerkCurrentUser) -> User:
-    """
-    Dependency to ensure current user has superuser privileges (Clerk-based)
-    """
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
-        )
-    return current_user
-
-
-ClerkCurrentSuperuser = Annotated[User, Depends(get_clerk_current_active_superuser)]
-
-
-# New improved auth dependencies using official Clerk SDK
 def get_current_user_session(request: Request, session: SessionDep) -> User:
     """
     Get current user using official Clerk SDK authenticate_request method.
@@ -157,14 +35,12 @@ def get_current_user_session(request: Request, session: SessionDep) -> User:
                 detail="No user ID in authenticated request",
             )
 
-        # Get user from database
         from sqlmodel import select
 
         statement = select(User).where(User.clerk_user_id == clerk_user_id)
         user = session.exec(statement).first()
 
         if not user:
-            # Try to sync user from Clerk
             sync_service = UserSyncService()
             sync_result = sync_service.fetch_and_sync_user(clerk_user_id)
 
@@ -188,79 +64,84 @@ def get_current_user_session(request: Request, session: SessionDep) -> User:
         )
 
 
-def get_current_user_machine_token(request: Request, session: SessionDep) -> User:
-    """
-    Get current user using machine/OAuth token authentication.
-
-    Single responsibility: Machine token-based user authentication.
-    For service-to-service communication, mobile apps, etc.
-    """
-    try:
-        clerk_service = ClerkService()
-        auth_data = clerk_service.authenticate_machine_token(request)
-
-        clerk_user_id = auth_data.get("user_id")
-        if not clerk_user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="No user ID in machine token",
-            )
-
-        # Get user from database
-        from sqlmodel import select
-
-        statement = select(User).where(User.clerk_user_id == clerk_user_id)
-        user = session.exec(statement).first()
-
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found in database")
-
-        if not user.is_active:
-            raise HTTPException(status_code=400, detail="User account is inactive")
-
-        return user
-
-    except ClerkAuthenticationError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Machine token authentication error: {str(e)}",
-        )
-
-
-def get_current_superuser_session(
-    current_user: Annotated[User, Depends(get_current_user_session)],
-) -> User:
-    """
-    Get current superuser using session authentication.
-
-    Single responsibility: Superuser privilege validation.
-    """
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
-        )
-    return current_user
-
-
-def get_current_superuser_machine_token(
-    current_user: Annotated[User, Depends(get_current_user_machine_token)],
-) -> User:
-    """
-    Get current superuser using machine token authentication.
-
-    Single responsibility: Superuser privilege validation for machine tokens.
-    """
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
-        )
-    return current_user
-
-
-# Type annotations for the new dependencies
 ClerkSessionUser = Annotated[User, Depends(get_current_user_session)]
-ClerkMachineUser = Annotated[User, Depends(get_current_user_machine_token)]
-ClerkSessionSuperuser = Annotated[User, Depends(get_current_superuser_session)]
-ClerkMachineSuperuser = Annotated[User, Depends(get_current_superuser_machine_token)]
+
+def require_permission(permission: str):
+    """
+    Decorator that checks if current user has specific permission.
+    
+    Args:
+        permission: Permission string (e.g., "users:write", "admin:read")
+        
+    Usage:
+        @require_permission("users:write")
+        def create_user(current_user: ClerkSessionUser):
+            pass
+    """
+    def dependency(current_user: ClerkSessionUser, session: SessionDep) -> User:
+        from app.services.rbac_service import RoleService, UserRoleService
+        
+        user_role_service = UserRoleService()
+        user_roles = user_role_service.get_user_roles(session, current_user.id)
+        
+        role_service = RoleService()
+        for user_role in user_roles:
+            role = role_service.get_role(session, user_role.role_id)
+            if role and (permission in role.permissions or "*" in role.permissions):
+                return current_user
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission '{permission}' required"
+        )
+    
+    return Annotated[User, Depends(dependency)]
+
+
+def require_role(roles: str | list[str]):
+    """
+    Factory function that creates a dependency for role-based authorization.
+    
+    Args:
+        roles: Role name or list of role names (e.g., "app_owner" or ["app_owner", "platform_admin"])
+        
+    Returns:
+        Annotated dependency that checks user roles
+        
+    Usage:
+        AdminUser = require_role(["app_owner", "platform_admin"])
+        
+        def some_endpoint(current_user: AdminUser):
+            pass
+    """
+    # Normalize to list for consistent handling
+    role_names = [roles] if isinstance(roles, str) else roles
+    
+    def dependency(current_user: ClerkSessionUser, session: SessionDep) -> User:
+        from app.services.rbac_service import RoleService, UserRoleService
+        
+        user_role_service = UserRoleService()
+        user_roles = user_role_service.get_user_roles(session, current_user.id)
+        
+        role_service = RoleService()
+        for user_role in user_roles:
+            role = role_service.get_role(session, user_role.role_id)
+            if role and role.name in role_names:
+                return current_user
+        
+        role_list = ", ".join(f"'{r}'" for r in role_names)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"One of these roles required: {role_list}"
+        )
+    
+    return Annotated[User, Depends(dependency)]
+
+
+# Clean type aliases for common role combinations  
+AppOwnerUser = require_role("app_owner")
+AdminUser = require_role(["app_owner", "platform_admin"])
+PlatformAdminUser = require_role("platform_admin")
+
+# Backward compatibility alias
+ClerkSessionSuperuser = AdminUser

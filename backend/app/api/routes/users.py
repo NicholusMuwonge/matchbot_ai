@@ -7,7 +7,8 @@ from sqlmodel import col, delete, func, select
 
 from app import crud
 from app.api.deps import (
-    ClerkSessionSuperuser,
+    AdminUser,
+    ClerkSessionUser,
     CurrentUser,
     SessionDep,
     get_current_active_superuser,
@@ -141,15 +142,25 @@ def read_user_me(current_user: CurrentUser) -> Any:
 @router.delete("/me", response_model=Message)
 def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
     """
-    Delete own user.
+    Delete own user (regular users only - admins cannot delete themselves).
     """
-    if current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="Super users are not allowed to delete themselves"
-        )
     session.delete(current_user)
     session.commit()
     return Message(message="User deleted successfully")
+
+
+@router.delete("/admin/me", response_model=Message)
+def delete_admin_user_me(
+    session: SessionDep, 
+    current_user: AdminUser
+) -> Any:
+    """
+    Admin users are not allowed to delete themselves for security.
+    """
+    raise HTTPException(
+        status_code=403, 
+        detail="Admin users are not allowed to delete themselves"
+    )
 
 
 @router.post("/signup", response_model=UserPublic)
@@ -170,19 +181,34 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
 
 @router.get("/{user_id}", response_model=UserPublic)
 def read_user_by_id(
-    user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
+    user_id: uuid.UUID, session: SessionDep, current_user: ClerkSessionUser
 ) -> Any:
     """
-    Get a specific user by id.
+    Get a specific user by id (only yourself).
     """
     user = session.get(User, user_id)
-    if user == current_user:
-        return user
-    if not current_user.is_superuser:
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user != current_user:
         raise HTTPException(
             status_code=403,
-            detail="The user doesn't have enough privileges",
+            detail="You can only access your own user information",
         )
+    return user
+
+
+@router.get("/admin/{user_id}", response_model=UserPublic)
+def read_any_user_by_id(
+    user_id: uuid.UUID, 
+    session: SessionDep, 
+    current_user: AdminUser
+) -> Any:
+    """
+    Admin-only: Get any user by id.
+    """
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
