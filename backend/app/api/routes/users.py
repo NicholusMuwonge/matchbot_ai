@@ -43,7 +43,10 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/", response_model=UsersPublic)
 def read_users(
-    session: Annotated[Session, Depends(get_db)], _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))], skip: int = 0, limit: int = 100
+    session: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
+    skip: int = 0,
+    limit: int = 100,
 ) -> Any:
     """
     Retrieve users.
@@ -59,7 +62,12 @@ def read_users(
 
 
 @router.post("/", response_model=UserPublic)
-def create_user(*, session: Annotated[Session, Depends(get_db)], _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))], user_in: UserCreate) -> Any:
+def create_user(
+    *,
+    session: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
+    user_in: UserCreate,
+) -> Any:
     """
     Create new user.
     """
@@ -85,7 +93,10 @@ def create_user(*, session: Annotated[Session, Depends(get_db)], _: Annotated[Us
 
 @router.patch("/me", response_model=UserPublic)
 def update_user_me(
-    *, session: Annotated[Session, Depends(get_db)], user_in: UserUpdateMe, current_user: ClerkSessionUser
+    *,
+    session: Annotated[Session, Depends(get_db)],
+    user_in: UserUpdateMe,
+    current_user: ClerkSessionUser,
 ) -> Any:
     """
     Update own user.
@@ -107,7 +118,10 @@ def update_user_me(
 
 @router.patch("/me/password", response_model=Message)
 def update_password_me(
-    *, session: Annotated[Session, Depends(get_db)], body: UpdatePassword, current_user: ClerkSessionUser
+    *,
+    session: Annotated[Session, Depends(get_db)],
+    body: UpdatePassword,
+    current_user: ClerkSessionUser,
 ) -> Any:
     """
     Update own password.
@@ -134,7 +148,9 @@ def read_user_me(current_user: ClerkSessionUser) -> Any:
 
 
 @router.delete("/me", response_model=Message)
-def delete_user_me(session: Annotated[Session, Depends(get_db)], current_user: ClerkSessionUser) -> Any:
+def delete_user_me(
+    session: Annotated[Session, Depends(get_db)], current_user: ClerkSessionUser
+) -> Any:
     """
     Delete own user (regular users only - admins cannot delete themselves).
     """
@@ -144,7 +160,10 @@ def delete_user_me(session: Annotated[Session, Depends(get_db)], current_user: C
 
 
 @router.delete("/admin/me", response_model=Message)
-def delete_admin_user_me(_: Annotated[Session, Depends(get_db)], __: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> Any:
+def delete_admin_user_me(
+    _: Annotated[Session, Depends(get_db)],
+    __: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
+) -> Any:
     """
     Admin users are not allowed to delete themselves for security.
     """
@@ -154,7 +173,9 @@ def delete_admin_user_me(_: Annotated[Session, Depends(get_db)], __: Annotated[U
 
 
 @router.post("/signup", response_model=UserPublic)
-def register_user(session: Annotated[Session, Depends(get_db)], user_in: UserRegister) -> Any:
+def register_user(
+    session: Annotated[Session, Depends(get_db)], user_in: UserRegister
+) -> Any:
     """
     Create new user without the need to be logged in.
     """
@@ -171,7 +192,9 @@ def register_user(session: Annotated[Session, Depends(get_db)], user_in: UserReg
 
 @router.get("/{user_id}", response_model=UserPublic)
 def read_user_by_id(
-    user_id: uuid.UUID, session: Annotated[Session, Depends(get_db)], current_user: ClerkSessionUser
+    user_id: uuid.UUID,
+    session: Annotated[Session, Depends(get_db)],
+    current_user: ClerkSessionUser,
 ) -> Any:
     """
     Get a specific user by id (only yourself).
@@ -188,7 +211,11 @@ def read_user_by_id(
 
 
 @router.get("/admin/{user_id}", response_model=UserPublic)
-def read_any_user_by_id(user_id: uuid.UUID, session: Annotated[Session, Depends(get_db)], _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> Any:
+def read_any_user_by_id(
+    user_id: uuid.UUID,
+    session: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
+) -> Any:
     """
     Admin-only: Get any user by id.
     """
@@ -229,7 +256,10 @@ def update_user(
 
 @router.delete("/{user_id}")
 def delete_user(
-    session: Annotated[Session, Depends(get_db)], current_user: ClerkSessionUser, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))], user_id: uuid.UUID
+    session: Annotated[Session, Depends(get_db)],
+    current_user: ClerkSessionUser,
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
+    user_id: uuid.UUID,
 ) -> Message:
     """
     Delete a user.
@@ -253,7 +283,10 @@ def delete_user(
     "/clerk/sync/{clerk_user_id}",
     response_model=UserSyncResponse,
 )
-async def sync_user_from_clerk(clerk_user_id: str, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> UserSyncResponse:
+async def sync_user_from_clerk(
+    clerk_user_id: str,
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
+) -> UserSyncResponse:
     """
     Manually trigger user sync from Clerk (Admin only).
 
@@ -283,7 +316,10 @@ async def sync_user_from_clerk(clerk_user_id: str, _: Annotated[User, Depends(re
     "/clerk/sync-by-email/{email}",
     response_model=UserSyncResponse | Message,
 )
-async def sync_user_by_email(email: str, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> Any:
+async def sync_user_by_email(
+    email: str,
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
+) -> Any:
     """
     Find and sync user by email from Clerk (Admin only).
 
@@ -311,7 +347,9 @@ async def sync_user_by_email(email: str, _: Annotated[User, Depends(require_role
 @router.get(
     "/clerk/sync-stats",
 )
-async def get_clerk_sync_stats(_: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> dict[str, int]:
+async def get_clerk_sync_stats(
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
+) -> dict[str, int]:
     """
     Get Clerk user synchronization statistics (Admin only).
 

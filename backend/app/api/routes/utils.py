@@ -19,7 +19,10 @@ router.include_router(health_router)
     "/test-email/",
     status_code=201,
 )
-def test_email(email_to: EmailStr, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> Message:
+def test_email(
+    email_to: EmailStr,
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
+) -> Message:
     """
     Test emails.
     """

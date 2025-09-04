@@ -33,7 +33,9 @@ class UserRolesListResponse(BaseModel):
 
 @router.post("/users/assign-role", response_model=UserRoleResponse)
 async def assign_role_to_user(
-    request: UserRoleAssignRequest, session: Annotated[Session, Depends(get_db)], _: Annotated[User, Depends(require_role("app_owner"))]
+    request: UserRoleAssignRequest,
+    session: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_role("app_owner"))],
 ) -> UserRoleResponse:
     """
     Assign a role to a user. Only app owners can assign roles.
@@ -99,7 +101,10 @@ async def assign_role_to_user(
 
 @router.delete("/users/{user_id}/roles/{role_name}")
 async def remove_role_from_user(
-    user_id: UUID, role_name: str, session: Annotated[Session, Depends(get_db)], _: Annotated[User, Depends(require_role("app_owner"))]
+    user_id: UUID,
+    role_name: str,
+    session: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_role("app_owner"))],
 ) -> UserRoleResponse:
     """
     Remove a role from a user. Only app owners can remove roles.
@@ -172,7 +177,9 @@ async def remove_role_from_user(
 
 @router.get("/users/{user_id}/roles", response_model=UserRolesListResponse)
 async def get_user_roles(
-    user_id: UUID, session: Annotated[Session, Depends(get_db)], _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]
+    user_id: UUID,
+    session: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
 ) -> UserRolesListResponse:
     """
     Get all roles assigned to a user.

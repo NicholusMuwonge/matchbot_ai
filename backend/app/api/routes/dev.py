@@ -19,7 +19,9 @@ class TestSetupResponse(BaseModel):
 
 
 @router.post("/setup-test-users", response_model=TestSetupResponse)
-async def setup_test_users_endpoint(session: Annotated[Session, Depends(get_db)]) -> TestSetupResponse:
+async def setup_test_users_endpoint(
+    session: Annotated[Session, Depends(get_db)],
+) -> TestSetupResponse:
     """
     Create test users for authentication testing.
 

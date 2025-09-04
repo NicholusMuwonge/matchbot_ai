@@ -102,7 +102,9 @@ def _check_user_roles(user: User, session: Session, required_roles: list[str]) -
 def require_permission(permission: str):
     """Create dependency that checks if user has specific permission."""
 
-    def dependency(current_user: ClerkSessionUser, session: Annotated[Session, Depends(get_db)]) -> User:
+    def dependency(
+        current_user: ClerkSessionUser, session: Annotated[Session, Depends(get_db)]
+    ) -> User:
         if _check_user_permissions(current_user, session, [permission]):
             return current_user
 
@@ -118,7 +120,9 @@ def require_role(roles: str | list[str]):
     """Create dependency that checks if user has required role(s)."""
     role_names = [roles] if isinstance(roles, str) else roles
 
-    def dependency(current_user: ClerkSessionUser, session: Annotated[Session, Depends(get_db)]) -> User:
+    def dependency(
+        current_user: ClerkSessionUser, session: Annotated[Session, Depends(get_db)]
+    ) -> User:
         if _check_user_roles(current_user, session, role_names):
             return current_user
 

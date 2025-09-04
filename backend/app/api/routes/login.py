@@ -24,7 +24,8 @@ router = APIRouter(tags=["login"])
 
 @router.post("/login/access-token")
 def login_access_token(
-    session: Annotated[Session, Depends(get_db)], form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+    session: Annotated[Session, Depends(get_db)],
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
     """
     OAuth2 compatible token login, get an access token for future requests
@@ -53,7 +54,9 @@ def test_token(current_user: ClerkSessionUser) -> Any:
 
 
 @router.post("/password-recovery/{email}")
-def recover_password(email: str, session: Annotated[Session, Depends(get_db)]) -> Message:
+def recover_password(
+    email: str, session: Annotated[Session, Depends(get_db)]
+) -> Message:
     """
     Password Recovery
     """
@@ -77,7 +80,9 @@ def recover_password(email: str, session: Annotated[Session, Depends(get_db)]) -
 
 
 @router.post("/reset-password/")
-def reset_password(session: Annotated[Session, Depends(get_db)], body: NewPassword) -> Message:
+def reset_password(
+    session: Annotated[Session, Depends(get_db)], body: NewPassword
+) -> Message:
     """
     Reset password
     """
@@ -103,7 +108,11 @@ def reset_password(session: Annotated[Session, Depends(get_db)], body: NewPasswo
     "/password-recovery-html-content/{email}",
     response_class=HTMLResponse,
 )
-def recover_password_html_content(email: str, session: Annotated[Session, Depends(get_db)], _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> Any:
+def recover_password_html_content(
+    email: str,
+    session: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
+) -> Any:
     """
     HTML Content for Password Recovery
     """

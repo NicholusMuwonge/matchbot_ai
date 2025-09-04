@@ -52,7 +52,8 @@ class OAuthTokenResponse(BaseModel):
 
 @router.post("/sign-in-tokens", response_model=SignInTokenResponse)
 async def create_sign_in_token(
-    token_data: SignInTokenCreate, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]
+    token_data: SignInTokenCreate,
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
 ) -> SignInTokenResponse:
     try:
         clerk_service = ClerkService()
@@ -83,7 +84,8 @@ async def create_sign_in_token(
 
 @router.post("/jwt-templates", response_model=JWTTemplateResponse)
 async def create_jwt_template(
-    template_data: JWTTemplateCreate, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]
+    template_data: JWTTemplateCreate,
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
 ) -> JWTTemplateResponse:
     try:
         clerk_service = ClerkService()
@@ -115,7 +117,8 @@ async def create_jwt_template(
 
 @router.post("/oauth/verify", response_model=OAuthTokenResponse)
 async def verify_oauth_token(
-    token_data: OAuthTokenVerify, _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]
+    token_data: OAuthTokenVerify,
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
 ) -> OAuthTokenResponse:
     try:
         clerk_service = ClerkService()
@@ -141,7 +144,9 @@ async def verify_oauth_token(
 
 
 @router.get("/health")
-async def admin_health_check(_: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))]) -> dict[str, str]:
+async def admin_health_check(
+    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
+) -> dict[str, str]:
     try:
         clerk_service = ClerkService()
 

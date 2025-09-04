@@ -72,7 +72,9 @@ async def handle_clerk_webhook(
 
 
 @router.get("/status/{webhook_id}")
-async def get_webhook_status(webhook_id: str, session: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
+async def get_webhook_status(
+    webhook_id: str, session: Annotated[Session, Depends(get_db)]
+) -> dict[str, Any]:
     """
     Get the status of a specific webhook processing
     """
@@ -103,7 +105,9 @@ async def get_webhook_status(webhook_id: str, session: Annotated[Session, Depend
 
 
 @router.get("/failed")
-async def get_failed_webhooks(session: Annotated[Session, Depends(get_db)], limit: int = 50) -> dict[str, Any]:
+async def get_failed_webhooks(
+    session: Annotated[Session, Depends(get_db)], limit: int = 50
+) -> dict[str, Any]:
     """
     Get list of failed webhooks that might need manual intervention
     """
@@ -136,7 +140,9 @@ async def get_failed_webhooks(session: Annotated[Session, Depends(get_db)], limi
 
 
 @router.post("/retry/{webhook_id}")
-async def retry_failed_webhook(webhook_id: str, session: Annotated[Session, Depends(get_db)]) -> WebhookResponse:
+async def retry_failed_webhook(
+    webhook_id: str, session: Annotated[Session, Depends(get_db)]
+) -> WebhookResponse:
     """
     Manually retry a failed webhook processing
     """
@@ -182,7 +188,9 @@ async def retry_failed_webhook(webhook_id: str, session: Annotated[Session, Depe
 
 
 @router.get("/stats")
-async def get_webhook_stats(session: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
+async def get_webhook_stats(
+    session: Annotated[Session, Depends(get_db)],
+) -> dict[str, Any]:
     """
     Get webhook processing statistics
     """

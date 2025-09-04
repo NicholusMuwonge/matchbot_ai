@@ -19,7 +19,9 @@ class PrivateUserCreate(BaseModel):
 
 
 @router.post("/users/", response_model=UserPublic)
-def create_user(user_in: PrivateUserCreate, session: Annotated[Session, Depends(get_db)]) -> Any:
+def create_user(
+    user_in: PrivateUserCreate, session: Annotated[Session, Depends(get_db)]
+) -> Any:
     """
     Create a new user.
     """
