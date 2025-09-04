@@ -89,10 +89,11 @@ class Settings(BaseSettings):
     CLERK_DEBUG: bool = Field(
         default=False, description="Enable debug logging for Clerk SDK operations"
     )
-    
+
     # Testing Configuration
     ENABLE_AUTH_TESTING: bool = Field(
-        default=False, description="Enable mock authentication for testing (bypasses Clerk)"
+        default=False,
+        description="Enable mock authentication for testing (bypasses Clerk)",
     )
 
     @computed_field  # type: ignore[prop-decorator]

@@ -150,16 +150,12 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
 
 
 @router.delete("/admin/me", response_model=Message)
-def delete_admin_user_me(
-    session: SessionDep, 
-    current_user: AdminUser
-) -> Any:
+def delete_admin_user_me(_: SessionDep, __: AdminUser) -> Any:
     """
     Admin users are not allowed to delete themselves for security.
     """
     raise HTTPException(
-        status_code=403, 
-        detail="Admin users are not allowed to delete themselves"
+        status_code=403, detail="Admin users are not allowed to delete themselves"
     )
 
 
@@ -199,9 +195,7 @@ def read_user_by_id(
 
 @router.get("/admin/{user_id}", response_model=UserPublic)
 def read_any_user_by_id(
-    user_id: uuid.UUID, 
-    session: SessionDep, 
-    current_user: AdminUser
+    user_id: uuid.UUID, session: SessionDep, _: AdminUser
 ) -> Any:
     """
     Admin-only: Get any user by id.
@@ -271,7 +265,7 @@ def delete_user(
     response_model=UserSyncResponse,
 )
 async def sync_user_from_clerk(
-    clerk_user_id: str, _: ClerkSessionSuperuser
+    clerk_user_id: str, _: AdminUser
 ) -> UserSyncResponse:
     """
     Manually trigger user sync from Clerk (Admin only).
@@ -302,7 +296,7 @@ async def sync_user_from_clerk(
     "/clerk/sync-by-email/{email}",
     response_model=UserSyncResponse | Message,
 )
-async def sync_user_by_email(email: str, _: ClerkSessionSuperuser) -> Any:
+async def sync_user_by_email(email: str, _: AdminUser) -> Any:
     """
     Find and sync user by email from Clerk (Admin only).
 
@@ -330,7 +324,7 @@ async def sync_user_by_email(email: str, _: ClerkSessionSuperuser) -> Any:
 @router.get(
     "/clerk/sync-stats",
 )
-async def get_clerk_sync_stats(_: ClerkSessionSuperuser) -> dict[str, int]:
+async def get_clerk_sync_stats(_: AdminUser) -> dict[str, int]:
     """
     Get Clerk user synchronization statistics (Admin only).
 

@@ -85,5 +85,3 @@ async def get_current_user(current_user: ClerkSessionUser) -> User:
     Authentication and user sync handled by ClerkSessionUser dependency.
     """
     return current_user
-
-

@@ -7,6 +7,7 @@ from sqlmodel import Session
 from app.core.db import engine
 from app.models import User
 from app.services.clerk_auth import ClerkAuthenticationError, ClerkService
+from app.services.rbac_service import RoleService, UserRoleService
 from app.services.user_sync_service import UserSyncService
 
 
@@ -66,29 +67,38 @@ def get_current_user_session(request: Request, session: SessionDep) -> User:
 
 ClerkSessionUser = Annotated[User, Depends(get_current_user_session)]
 
-def require_permission(permission: str):
-    """
-    Decorator that checks if current user has specific permission.
+
+def _check_user_permissions(user: User, session: Session, required_permissions: list[str]) -> bool:
+    """Helper function to check if user has any of the required permissions."""
+    user_role_service = UserRoleService()
+    user_roles = user_role_service.get_user_roles(session, user.id)
     
-    Args:
-        permission: Permission string (e.g., "users:write", "admin:read")
-        
-    Usage:
-        @require_permission("users:write")
-        def create_user(current_user: ClerkSessionUser):
-            pass
-    """
+    role_service = RoleService()
+    for user_role in user_roles:
+        role = role_service.get_role(session, user_role.role_id)
+        if role and ("*" in role.permissions or any(perm in role.permissions for perm in required_permissions)):
+            return True
+    return False
+
+
+def _check_user_roles(user: User, session: Session, required_roles: list[str]) -> bool:
+    """Helper function to check if user has any of the required roles."""
+    user_role_service = UserRoleService()
+    user_roles = user_role_service.get_user_roles(session, user.id)
+    
+    role_service = RoleService()
+    for user_role in user_roles:
+        role = role_service.get_role(session, user_role.role_id)
+        if role and role.name in required_roles:
+            return True
+    return False
+
+
+def require_permission(permission: str):
+    """Create dependency that checks if user has specific permission."""
     def dependency(current_user: ClerkSessionUser, session: SessionDep) -> User:
-        from app.services.rbac_service import RoleService, UserRoleService
-        
-        user_role_service = UserRoleService()
-        user_roles = user_role_service.get_user_roles(session, current_user.id)
-        
-        role_service = RoleService()
-        for user_role in user_roles:
-            role = role_service.get_role(session, user_role.role_id)
-            if role and (permission in role.permissions or "*" in role.permissions):
-                return current_user
+        if _check_user_permissions(current_user, session, [permission]):
+            return current_user
         
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -99,35 +109,12 @@ def require_permission(permission: str):
 
 
 def require_role(roles: str | list[str]):
-    """
-    Factory function that creates a dependency for role-based authorization.
-    
-    Args:
-        roles: Role name or list of role names (e.g., "app_owner" or ["app_owner", "platform_admin"])
-        
-    Returns:
-        Annotated dependency that checks user roles
-        
-    Usage:
-        AdminUser = require_role(["app_owner", "platform_admin"])
-        
-        def some_endpoint(current_user: AdminUser):
-            pass
-    """
-    # Normalize to list for consistent handling
+    """Create dependency that checks if user has required role(s)."""
     role_names = [roles] if isinstance(roles, str) else roles
     
     def dependency(current_user: ClerkSessionUser, session: SessionDep) -> User:
-        from app.services.rbac_service import RoleService, UserRoleService
-        
-        user_role_service = UserRoleService()
-        user_roles = user_role_service.get_user_roles(session, current_user.id)
-        
-        role_service = RoleService()
-        for user_role in user_roles:
-            role = role_service.get_role(session, user_role.role_id)
-            if role and role.name in role_names:
-                return current_user
+        if _check_user_roles(current_user, session, role_names):
+            return current_user
         
         role_list = ", ".join(f"'{r}'" for r in role_names)
         raise HTTPException(
@@ -138,10 +125,11 @@ def require_role(roles: str | list[str]):
     return Annotated[User, Depends(dependency)]
 
 
-# Clean type aliases for common role combinations  
+# Clean type aliases for common role combinations
 AppOwnerUser = require_role("app_owner")
 AdminUser = require_role(["app_owner", "platform_admin"])
 PlatformAdminUser = require_role("platform_admin")
 
-# Backward compatibility alias
+# Backward compatibility aliases
 ClerkSessionSuperuser = AdminUser
+CurrentUser = ClerkSessionUser  # Add missing CurrentUser alias

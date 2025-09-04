@@ -18,16 +18,11 @@ def read_my_items(
     Get items owned by current user.
     """
     count_statement = (
-        select(func.count())
-        .select_from(Item)
-        .where(Item.owner_id == current_user.id)
+        select(func.count()).select_from(Item).where(Item.owner_id == current_user.id)
     )
     count = session.exec(count_statement).one()
     statement = (
-        select(Item)
-        .where(Item.owner_id == current_user.id)
-        .offset(skip)
-        .limit(limit)
+        select(Item).where(Item.owner_id == current_user.id).offset(skip).limit(limit)
     )
     items = session.exec(statement).all()
     return ItemsPublic(data=items, count=count)
@@ -35,10 +30,7 @@ def read_my_items(
 
 @router.get("/admin/all", response_model=ItemsPublic)
 def read_all_items(
-    session: SessionDep, 
-    current_user: AdminUser,
-    skip: int = 0, 
-    limit: int = 100
+    session: SessionDep, _: AdminUser, skip: int = 0, limit: int = 100
 ) -> Any:
     """
     Admin-only: Get all items in system.
@@ -51,7 +43,9 @@ def read_all_items(
 
 
 @router.get("/{id}", response_model=ItemPublic)
-def read_my_item(session: SessionDep, current_user: ClerkSessionUser, id: uuid.UUID) -> Any:
+def read_my_item(
+    session: SessionDep, current_user: ClerkSessionUser, id: uuid.UUID
+) -> Any:
     """
     Get item by ID (must be owned by current user).
     """
@@ -64,11 +58,7 @@ def read_my_item(session: SessionDep, current_user: ClerkSessionUser, id: uuid.U
 
 
 @router.get("/admin/{id}", response_model=ItemPublic)
-def read_any_item(
-    session: SessionDep, 
-    current_user: AdminUser, 
-    id: uuid.UUID
-) -> Any:
+def read_any_item(session: SessionDep, _: AdminUser, id: uuid.UUID) -> Any:
     """
     Admin-only: Get any item by ID.
     """
@@ -120,7 +110,7 @@ def update_my_item(
 def update_any_item(
     *,
     session: SessionDep,
-    current_user: AdminUser,
+    _: AdminUser,
     id: uuid.UUID,
     item_in: ItemUpdate,
 ) -> Any:
@@ -157,9 +147,7 @@ def delete_my_item(
 
 @router.delete("/admin/{id}")
 def delete_any_item(
-    session: SessionDep, 
-    current_user: AdminUser, 
-    id: uuid.UUID
+    session: SessionDep, _: AdminUser, id: uuid.UUID
 ) -> Message:
     """
     Admin-only: Delete any item.

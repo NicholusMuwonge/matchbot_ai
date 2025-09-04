@@ -105,10 +105,10 @@ if settings.all_cors_origins:
 if settings.ENABLE_AUTH_TESTING:
     from app.api.deps import get_current_user_session
     from app.api.test_auth import get_mock_user_session
-    
+
     # Override authentication dependency for testing
     app.dependency_overrides[get_current_user_session] = get_mock_user_session
-    
+
     print("🧪 TEST AUTHENTICATION ENABLED")
     print("   Use X-Test-Role header: regular_user, platform_admin, or app_owner")
     print("   Call POST /api/v1/dev/setup-test-users to create test users")

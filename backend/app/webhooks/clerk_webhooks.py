@@ -34,6 +34,7 @@ async def process_clerk_webhook(
     raw_body: str = None,
 ) -> dict[str, Any]:
     from app.webhooks.enhanced_clerk_webhooks import EnhancedClerkWebhookProcessor
+
     processor = EnhancedClerkWebhookProcessor()
     return await processor.process_webhook_with_verification(
         webhook_data, headers, session, raw_body

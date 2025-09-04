@@ -51,7 +51,7 @@ class OAuthTokenResponse(BaseModel):
 
 @router.post("/sign-in-tokens", response_model=SignInTokenResponse)
 async def create_sign_in_token(
-    token_data: SignInTokenCreate, current_user: AdminUser
+    token_data: SignInTokenCreate, _: AdminUser
 ) -> SignInTokenResponse:
     try:
         clerk_service = ClerkService()
@@ -82,7 +82,7 @@ async def create_sign_in_token(
 
 @router.post("/jwt-templates", response_model=JWTTemplateResponse)
 async def create_jwt_template(
-    template_data: JWTTemplateCreate, current_user: AdminUser
+    template_data: JWTTemplateCreate, _: AdminUser
 ) -> JWTTemplateResponse:
     try:
         clerk_service = ClerkService()
@@ -114,7 +114,7 @@ async def create_jwt_template(
 
 @router.post("/oauth/verify", response_model=OAuthTokenResponse)
 async def verify_oauth_token(
-    token_data: OAuthTokenVerify, current_user: AdminUser
+    token_data: OAuthTokenVerify, _: AdminUser
 ) -> OAuthTokenResponse:
     try:
         clerk_service = ClerkService()
@@ -140,7 +140,7 @@ async def verify_oauth_token(
 
 
 @router.get("/health")
-async def admin_health_check(current_user: AdminUser) -> dict[str, str]:
+async def admin_health_check(_: AdminUser) -> dict[str, str]:
     try:
         clerk_service = ClerkService()
 
