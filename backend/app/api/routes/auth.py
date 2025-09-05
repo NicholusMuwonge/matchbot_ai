@@ -26,7 +26,7 @@ Handles session validation and current user retrieval only
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from app.api.deps import ClerkMachineUser, ClerkSessionUser
+from app.api.deps import ClerkSessionUser
 from app.models import User
 from app.services.clerk_auth import ClerkAuthenticationError, ClerkService
 
@@ -83,22 +83,5 @@ async def get_current_user(current_user: ClerkSessionUser) -> User:
 
     Single responsibility: Return current user info only.
     Authentication and user sync handled by ClerkSessionUser dependency.
-    """
-    return current_user
-
-
-@router.get("/me/machine", response_model=User)
-async def get_current_user_machine_token(current_user: ClerkMachineUser) -> User:
-    """
-    Get the current authenticated user using machine/OAuth token.
-
-    For service-to-service communication, mobile apps, background jobs, etc.
-    Requires OAuth token in Authorization header instead of session cookie.
-
-    Example usage:
-    - Mobile applications
-    - Background services
-    - External API integrations
-    - Admin dashboards
     """
     return current_user
