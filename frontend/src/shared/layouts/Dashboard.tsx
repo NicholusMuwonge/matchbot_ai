@@ -1,7 +1,8 @@
 import { Box, Flex } from "@chakra-ui/react"
-import { type ReactNode } from "react"
+import type { ReactNode } from "react"
 
 import { Navbar, Sidebar } from "@/shared/components"
+import { SidebarProvider } from "@/shared/contexts/SidebarContext"
 
 interface DashboardProps {
   children: ReactNode
@@ -9,9 +10,17 @@ interface DashboardProps {
 
 function Dashboard({ children }: DashboardProps) {
   return (
-    <Flex minH="100vh" bg="bg.default" data-testid="dashboard-layout">
-      {children}
-    </Flex>
+    <SidebarProvider>
+      <Flex
+        minH="100vh"
+        bg="bg.default"
+        data-testid="dashboard-layout"
+        w="100vw"
+        overflow="hidden"
+      >
+        {children}
+      </Flex>
+    </SidebarProvider>
   )
 }
 
@@ -21,17 +30,7 @@ function DashboardSidebar() {
 
 function DashboardHeader() {
   return (
-    <Flex
-      as="header"
-      justify="flex-end"
-      align="center"
-      bg="bg.default"
-      px={6}
-      py={4}
-      borderBottom="1px"
-      borderColor="border.muted"
-      data-testid="dashboard-header"
-    >
+    <Flex as="header" w="100%" data-testid="dashboard-header">
       <Navbar />
     </Flex>
   )
@@ -43,7 +42,13 @@ interface DashboardContentProps {
 
 function DashboardContent({ children }: DashboardContentProps) {
   return (
-    <Flex direction="column" flex="1" data-testid="dashboard-content">
+    <Flex
+      direction="column"
+      w="100%"
+      flex={1}
+      data-testid="dashboard-content"
+      overflow="hidden"
+    >
       <DashboardHeader />
       <Box flex="1" p={6} overflow="auto">
         {children}

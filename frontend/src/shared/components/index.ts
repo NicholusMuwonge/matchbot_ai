@@ -1,7 +1,6 @@
 // Navigation Components
 export { default as Navbar } from "./Navbar"
 export { default as Sidebar } from "./Sidebar"
-export { default as SidebarItems } from "./SidebarItems"
 
 // User Components
 export { default as UserMenu } from "./UserMenu"

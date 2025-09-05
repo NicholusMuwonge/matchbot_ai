@@ -13,6 +13,7 @@ import {
   useBreakpointValue,
 } from "@chakra-ui/react"
 import { Link, useRouterState } from "@tanstack/react-router"
+import React from "react"
 import { useState } from "react"
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi"
 

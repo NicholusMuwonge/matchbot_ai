@@ -26,13 +26,16 @@ export interface LoadingProps {
 }
 
 const LoadingSpinner = React.forwardRef<HTMLDivElement, LoadingProps>(
-  function LoadingSpinner({ size = "md", colorPalette = "blue", label, fullScreen, height }, ref) {
+  function LoadingSpinner(
+    { size = "md", colorPalette = "blue", label, fullScreen, height },
+    ref,
+  ) {
     const sizeMap = {
       xs: "sm",
       sm: "md",
       md: "lg",
       lg: "xl",
-      xl: "2xl"
+      xl: "2xl",
     }
 
     const content = (
@@ -42,10 +45,7 @@ const LoadingSpinner = React.forwardRef<HTMLDivElement, LoadingProps>(
           colorPalette={colorPalette}
         />
         {label && (
-          <Text
-            color={{ base: "gray.600", _dark: "gray.300" }}
-            fontSize="sm"
-          >
+          <Text color={{ base: "gray.600", _dark: "gray.300" }} fontSize="sm">
             {label}
           </Text>
         )}
@@ -105,7 +105,12 @@ const LoadingSkeletonTable = React.forwardRef<HTMLDivElement, LoadingProps>(
       <Box height={height} width={width} ref={ref}>
         <VStack gap={3} align="stretch">
           {/* Table header */}
-          <HStack gap={4} p={3} borderBottom="1px solid" borderColor="border.muted">
+          <HStack
+            gap={4}
+            p={3}
+            borderBottom="1px solid"
+            borderColor="border.muted"
+          >
             <Skeleton height="4" width="20%" />
             <Skeleton height="4" width="30%" />
             <Skeleton height="4" width="25%" />
@@ -113,7 +118,13 @@ const LoadingSkeletonTable = React.forwardRef<HTMLDivElement, LoadingProps>(
           </HStack>
           {/* Table rows */}
           {Array.from({ length: 5 }).map((_, index) => (
-            <HStack key={index} gap={4} p={3} borderBottom="1px solid" borderColor="border.subtle">
+            <HStack
+              key={index}
+              gap={4}
+              p={3}
+              borderBottom="1px solid"
+              borderColor="border.subtle"
+            >
               <Skeleton height="8" width="8" borderRadius="full" />
               <VStack gap={1} flex={1} align="stretch">
                 <Skeleton height="3" width="80%" />
@@ -130,12 +141,20 @@ const LoadingSkeletonTable = React.forwardRef<HTMLDivElement, LoadingProps>(
 )
 
 const LoadingSkeletonLine = React.forwardRef<HTMLDivElement, LoadingProps>(
-  function LoadingSkeletonLine({ height = "4", width = "100%", noOfLines = 1 }, ref) {
+  function LoadingSkeletonLine(
+    { height = "4", width = "100%", noOfLines = 1 },
+    ref,
+  ) {
     if (noOfLines > 1) {
       return (
         <Box ref={ref}>
           {Array.from({ length: noOfLines }).map((_, i) => (
-            <Skeleton key={i} height={height} width={i === noOfLines - 1 ? "80%" : "100%"} mb={2} />
+            <Skeleton
+              key={i}
+              height={height}
+              width={i === noOfLines - 1 ? "80%" : "100%"}
+              mb={2}
+            />
           ))}
         </Box>
       )
@@ -155,13 +174,22 @@ const LoadingSkeletonCircle = React.forwardRef<HTMLDivElement, LoadingProps>(
       xl: "16",
     }
 
-    return <Skeleton height={sizeMap[size] || sizeMap.md} width={sizeMap[size] || sizeMap.md} borderRadius="full" ref={ref} />
+    return (
+      <Skeleton
+        height={sizeMap[size] || sizeMap.md}
+        width={sizeMap[size] || sizeMap.md}
+        borderRadius="full"
+        ref={ref}
+      />
+    )
   },
 )
 
 const LoadingSkeletonBox = React.forwardRef<HTMLDivElement, LoadingProps>(
   function LoadingSkeletonBox({ height = "100px", width = "100%" }, ref) {
-    return <Skeleton height={height} width={width} borderRadius="md" ref={ref} />
+    return (
+      <Skeleton height={height} width={width} borderRadius="md" ref={ref} />
+    )
   },
 )
 
