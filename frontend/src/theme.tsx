@@ -22,6 +22,18 @@ export const system = createSystem(defaultConfig, {
         ui: {
           main: { value: "#009688" },
         },
+        primary: {
+          50: { value: "#eff6ff" },
+          100: { value: "#dbeafe" },
+          200: { value: "#bfdbfe" },
+          300: { value: "#93c5fd" },
+          400: { value: "#60a5fa" },
+          500: { value: "#2463eb" },
+          600: { value: "#1d4ed8" },
+          700: { value: "#1e40af" },
+          800: { value: "#1e3a8a" },
+          900: { value: "#1e3a8a" },
+        },
       },
     },
     recipes: {

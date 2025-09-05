@@ -10,8 +10,9 @@ import React, { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
 import { routeTree } from "./routeTree.gen"
 
-import { ChakraProvider, defaultSystem } from "@chakra-ui/react"
+import { ChakraProvider } from "@chakra-ui/react"
 import { ApiError, OpenAPI } from "./client"
+import { system } from "./theme"
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
@@ -75,7 +76,7 @@ function App() {
         },
       }}
     >
-      <ChakraProvider value={defaultSystem}>
+      <ChakraProvider value={system}>
         <QueryClientProvider client={queryClient}>
           <InnerApp />
         </QueryClientProvider>

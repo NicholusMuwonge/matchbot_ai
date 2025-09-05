@@ -4,10 +4,7 @@ import AuthFormSkeleton from "./AuthFormSkeleton"
 
 const Login = () => {
   return (
-    <Center
-      minH="100vh"
-      bg="#f4f8fe"
-    >
+    <Center minH="100vh" bg="#f4f8fe">
       <ClerkLoading>
         <AuthFormSkeleton formType="login" />
       </ClerkLoading>
