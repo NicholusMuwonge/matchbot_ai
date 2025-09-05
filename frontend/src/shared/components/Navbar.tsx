@@ -1,6 +1,6 @@
-import { Flex, Text } from "@chakra-ui/react"
-import { Link } from "@tanstack/react-router"
+import { Flex } from "@chakra-ui/react"
 import NavigationToggle from "./NavigationToggle"
+import RoleDisplay from "./RoleDisplay"
 import UserMenu from "./UserMenu"
 
 function Navbar() {
@@ -15,18 +15,14 @@ function Navbar() {
       borderBottom="1px"
       borderColor="border.muted"
     >
-      {/* Left section: Toggle button and App name */}
+      {/* Left section: Toggle button */}
       <Flex align="center" gap={3}>
         <NavigationToggle variant="ghost" size="sm" />
-        <Link to="/">
-          <Text fontSize="md" fontWeight="medium" color="fg.default">
-            MatchBot AI
-          </Text>
-        </Link>
       </Flex>
 
       {/* Right section: User menu and other controls */}
-      <Flex gap={2} alignItems="center">
+      <Flex gap={3} alignItems="center">
+        <RoleDisplay size="sm" variant="outline" />
         <UserMenu />
       </Flex>
     </Flex>

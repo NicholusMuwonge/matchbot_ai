@@ -1,7 +1,7 @@
 import { Icon, IconButton } from "@chakra-ui/react"
 import { useEffect } from "react"
 import { FiMenu, FiX } from "react-icons/fi"
-import { useNavigationStoreWithBreakpoint } from "../store/navigation-store"
+import { useNavigationStoreWithBreakpoint } from "../store/navigation_store"
 
 interface NavigationToggleProps {
   variant?: "solid" | "ghost" | "outline"

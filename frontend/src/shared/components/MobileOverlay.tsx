@@ -1,12 +1,15 @@
 import { Box, Portal } from "@chakra-ui/react"
-import { useNavigationStoreWithBreakpoint } from "../store/navigation-store"
+import { SIDEBAR_WIDTHS } from "@/shared/constants/layout"
+import { useNavigationStoreWithBreakpoint } from "@/shared/store/navigation_store"
 
 const MobileOverlay = () => {
-  const { isMobile, isExpanded, showOverlay, actions } =
+  const { isMobile, isTablet, isExpanded, actions } =
     useNavigationStoreWithBreakpoint()
   const { closeMobile } = actions
 
-  if (!isMobile || !showOverlay) {
+  const shouldShowOverlay = (isMobile || isTablet) && isExpanded
+
+  if (!shouldShowOverlay) {
     return null
   }
 
@@ -15,7 +18,7 @@ const MobileOverlay = () => {
       <Box
         position="fixed"
         top={0}
-        left={0}
+        left={SIDEBAR_WIDTHS.EXPANDED}
         right={0}
         bottom={0}
         bg="blackAlpha.600"

@@ -29,15 +29,15 @@ interface NavigationState {
 const useNavigationStore = create<NavigationState>()(
   persist(
     (set, get) => ({
-      isExpanded: false,
+      isExpanded: true,
       isHovered: false,
       isMobile: false,
       isTablet: false,
       isLarge: false,
       showOverlay: false,
       userPreferences: {
-        large: true, // Default to open on large screens
-        tablet: false, // Default to closed on tablet
+        large: true,
+        tablet: false,
       },
       actions: {
         toggleSidebar: () => {
@@ -46,7 +46,6 @@ const useNavigationStore = create<NavigationState>()(
           set((state) => {
             const newExpanded = !state.isExpanded
 
-            // Update user preference for current breakpoint (not for mobile)
             const newPreferences = { ...state.userPreferences }
             if (isLarge) {
               newPreferences.large = newExpanded
@@ -70,15 +69,27 @@ const useNavigationStore = create<NavigationState>()(
           isLarge: boolean,
         ) => {
           set((state) => {
-            // Determine the appropriate expanded state based on breakpoint and user preference
+            const currentBreakpoint = state.isMobile ? 'mobile' : state.isTablet ? 'tablet' : 'large'
+            const newBreakpoint = isMobile ? 'mobile' : isTablet ? 'tablet' : 'large'
+
             let newExpanded = state.isExpanded
 
-            if (isLarge) {
-              newExpanded = state.userPreferences.large
-            } else if (isTablet) {
-              newExpanded = state.userPreferences.tablet
-            } else if (isMobile) {
-              newExpanded = false // Mobile always starts closed
+            if (!state.isMobile && !state.isTablet && !state.isLarge) {
+              if (isLarge) {
+                newExpanded = state.userPreferences.large
+              } else if (isTablet) {
+                newExpanded = state.userPreferences.tablet
+              } else if (isMobile) {
+                newExpanded = false
+              }
+            } else if (currentBreakpoint !== newBreakpoint) {
+              if (isLarge) {
+                newExpanded = state.userPreferences.large
+              } else if (isTablet) {
+                newExpanded = state.userPreferences.tablet
+              } else if (isMobile) {
+                newExpanded = state.isExpanded
+              }
             }
 
             return {
@@ -107,12 +118,11 @@ const useNavigationStore = create<NavigationState>()(
 export const useNavigationStoreWithBreakpoint = () => {
   const store = useNavigationStore()
 
-  // 3-tier breakpoint detection
   const breakpoints =
     useBreakpointValue({
-      base: "mobile", // < md (< 768px)
-      md: "tablet", // md to lg (768px - 1023px)
-      lg: "large", // lg+ (≥ 1024px)
+      base: "mobile",
+      md: "tablet",
+      lg: "large",
     }) ?? "mobile"
 
   const isMobile = breakpoints === "mobile"
@@ -121,7 +131,7 @@ export const useNavigationStoreWithBreakpoint = () => {
 
   useEffect(() => {
     store.actions.setBreakpoint(isMobile, isTablet, isLarge)
-  }, [isMobile, isTablet, isLarge, store.actions])
+  }, [isMobile, isTablet, isLarge])
 
   return store
 }

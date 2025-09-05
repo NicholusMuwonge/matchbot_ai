@@ -1,7 +1,7 @@
 // Navigation Components
 export { default as Navbar } from "./Navbar"
-export { default as Sidebar } from "./Sidebar"
-export { default as SidebarItems } from "./SidebarItems"
+export { default as Sidebar } from "./navigation/Sidebar"
+export { default as SidebarItems } from "./navigation/SidebarItems"
 export { default as NavigationToggle } from "./NavigationToggle"
 export { default as NavigationSection } from "./NavigationSection"
 export { default as MobileOverlay } from "./MobileOverlay"

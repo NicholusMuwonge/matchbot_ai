@@ -1,15 +1,14 @@
 import { ChakraProvider, createSystem, defaultConfig } from "@chakra-ui/react"
 import { render, screen } from "@testing-library/react"
-import { vi } from "vitest"
-import { useNavigationStoreWithBreakpoint } from "../../store/navigation-store"
-import SidebarItems from "../SidebarItems"
+import { describe, expect, it, vi } from "vitest"
+import { useNavigationStoreWithBreakpoint } from "@/shared/store/navigation_store"
+import SidebarItems from "../navigation/SidebarItems"
+import React from "react"
 
-// Mock the navigation store
-vi.mock("../../store/navigation-store", () => ({
+vi.mock("../../store/navigation_store", () => ({
   useNavigationStoreWithBreakpoint: vi.fn(),
 }))
 
-// Mock TanStack Router
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ to, children, ...props }: any) => (
     <a href={to} {...props}>
@@ -56,11 +55,9 @@ describe("SidebarItems - Collapsed State", () => {
       </TestWrapper>,
     )
 
-    // Should show top-level items only (6 items total)
     const menuItems = screen.getAllByRole("menuitem")
     expect(menuItems).toHaveLength(6)
 
-    // Should show links for navigation
     expect(
       screen.getByRole("link", { name: /navigate to dashboard/i }),
     ).toBeInTheDocument()
@@ -80,7 +77,6 @@ describe("SidebarItems - Collapsed State", () => {
       screen.getByRole("link", { name: /navigate to settings/i }),
     ).toBeInTheDocument()
 
-    // Should NOT show nested items when collapsed
     expect(screen.queryByText("Members")).not.toBeInTheDocument()
     expect(screen.queryByText("Roles")).not.toBeInTheDocument()
     expect(screen.queryByText("Import")).not.toBeInTheDocument()
@@ -107,11 +103,9 @@ describe("SidebarItems - Collapsed State", () => {
       </TestWrapper>,
     )
 
-    // All navigation items should have tooltips when collapsed
     const tooltipTriggers = screen.getAllByRole("link")
-    expect(tooltipTriggers).toHaveLength(6) // 6 top-level items
+    expect(tooltipTriggers).toHaveLength(6)
 
-    // Check that Dashboard tooltip works correctly
     const dashboardItem = screen.getByRole("link", {
       name: /navigate to dashboard/i,
     })
@@ -166,16 +160,16 @@ describe("SidebarItems - Collapsed State", () => {
       </TestWrapper>,
     )
 
-    // All navigation items should be at the same padding level (px={3})
     const menuItems = container.querySelectorAll('[role="menuitem"]')
 
     menuItems.forEach((item) => {
       const flexElement = item.querySelector('[style*="padding"]') || item
-      // This is a basic check - in a real app you might check computed styles
       expect(flexElement).toBeInTheDocument()
     })
 
-    // Should be exactly 6 items (no nested items shown)
     expect(menuItems).toHaveLength(6)
   })
 })
+function beforeEach(arg0: () => void) {
+  throw new Error("Function not implemented.")
+}
