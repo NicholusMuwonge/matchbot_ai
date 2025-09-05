@@ -1,0 +1,40 @@
+flowchart TD
+    Start([Webhook Event Received]) --> ValidateSig{Validate Signature}
+    ValidateSig -->|Invalid| InvalidSig[Mark as Invalid]
+    ValidateSig -->|Valid| CheckType{Check Event Type}
+
+    CheckType -->|user.created| CreateTask[Schedule Create Task]
+    CheckType -->|user.updated| UpdateTask[Schedule Update Task]
+    CheckType -->|user.deleted| DeleteTask[Schedule Delete Task]
+    CheckType -->|other| IgnoreEvent[Mark as Ignored]
+
+    CreateTask --> CeleryQueue[Add to Celery Queue]
+    UpdateTask --> CeleryQueue
+    DeleteTask --> CeleryQueue
+
+    CeleryQueue --> ProcessTask[Celery Worker Processes Task]
+
+    ProcessTask --> CheckUser{User Exists Locally?}
+
+    CheckUser -->|Yes| UpdateLocal[Update Local User]
+    CheckUser -->|No| CreateLocal[Create Local User]
+
+    UpdateLocal --> CheckConflict{Email Conflict?}
+    CreateLocal --> CheckConflict
+
+    CheckConflict -->|Yes| ResolveConflict[Resolve Conflict]
+    CheckConflict -->|No| SaveUser[Save User to DB]
+
+    ResolveConflict --> SaveUser
+    SaveUser --> UpdateWebhook[Mark Webhook as Success]
+
+    ProcessTask -->|Error| RetryTask{Retry Count < Max?}
+    RetryTask -->|Yes| ScheduleRetry[Schedule Retry with Backoff]
+    RetryTask -->|No| MarkFailed[Mark as Failed]
+
+    ScheduleRetry --> CeleryQueue
+
+    InvalidSig --> End([End])
+    IgnoreEvent --> End
+    UpdateWebhook --> End
+    MarkFailed --> End

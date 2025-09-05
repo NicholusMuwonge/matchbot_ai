@@ -1,0 +1,22 @@
+# Development Dockerfile for hot reloading
+FROM node:20
+
+WORKDIR /app
+
+# Copy package files first for better layer caching
+COPY package*.json /app/
+
+# Install dependencies
+RUN for i in 1 2 3 4 5; do \
+        npm install && break || \
+        echo "Attempt $i failed, retrying in 5 seconds..." && sleep 5; \
+    done
+
+# Copy source code
+COPY . /app/
+
+# Expose Vite dev server port
+EXPOSE 5173
+
+# Start development server with hot reloading
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

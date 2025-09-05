@@ -1,0 +1,28 @@
+stateDiagram-v2
+    [*] --> Pending : Webhook received
+
+    Pending --> Processing : Signature verified
+    Pending --> Invalid : Invalid signature
+    Pending --> Ignored : Unknown event type
+
+    Processing --> Success : Processing completed
+    Processing --> Failed : Error occurred
+
+    Failed --> Processing : Retry (if attempts < max)
+    Failed --> Failed : Max retries reached
+
+    Success --> [*]
+    Invalid --> [*]
+    Ignored --> [*]
+    Failed --> [*] : After max retries
+
+    note right of Processing
+        Background task
+        scheduled via Celery
+    end note
+
+    note right of Failed
+        Exponential backoff:
+        2^retry_count minutes
+        (max 60 minutes)
+    end note

@@ -1,0 +1,107 @@
+graph TB
+    subgraph "External Services"
+        Clerk[Clerk Dashboard & API]
+        Users[End Users]
+    end
+
+    subgraph "Load Balancer"
+        LB[Load Balancer / CDN]
+    end
+
+    subgraph "Application Tier"
+        subgraph "Frontend Instances"
+            FE1[Frontend App 1]
+            FE2[Frontend App 2]
+        end
+
+        subgraph "Backend Instances"
+            BE1[Backend API 1]
+            BE2[Backend API 2]
+            BE3[Backend API 3]
+        end
+
+        subgraph "Worker Instances"
+            Worker1[Celery Worker 1]
+            Worker2[Celery Worker 2]
+        end
+    end
+
+    subgraph "Data Tier"
+        Redis[(Redis Cluster)]
+        DB[(PostgreSQL Primary)]
+        DBRead[(PostgreSQL Replicas)]
+
+        subgraph "Monitoring"
+            Logs[Centralized Logging]
+            Metrics[Metrics & Alerts]
+        end
+    end
+
+    %% User connections
+    Users --> LB
+    LB --> FE1
+    LB --> FE2
+
+    %% Frontend to backend
+    FE1 --> LB
+    FE2 --> LB
+    LB --> BE1
+    LB --> BE2
+    LB --> BE3
+
+    %% Clerk webhooks (direct to backend)
+    Clerk -.->|Webhooks| BE1
+    Clerk -.->|Webhooks| BE2
+    Clerk -.->|Webhooks| BE3
+
+    %% Backend to services
+    BE1 --> Redis
+    BE2 --> Redis
+    BE3 --> Redis
+
+    BE1 --> DB
+    BE2 --> DB
+    BE3 --> DB
+
+    BE1 -.->|Reads| DBRead
+    BE2 -.->|Reads| DBRead
+    BE3 -.->|Reads| DBRead
+
+    %% Workers
+    Redis --> Worker1
+    Redis --> Worker2
+    Worker1 --> DB
+    Worker2 --> DB
+
+    %% API calls to Clerk
+    BE1 -.->|API Calls| Clerk
+    BE2 -.->|API Calls| Clerk
+    BE3 -.->|API Calls| Clerk
+    Worker1 -.->|API Calls| Clerk
+    Worker2 -.->|API Calls| Clerk
+
+    %% Monitoring
+    BE1 --> Logs
+    BE2 --> Logs
+    BE3 --> Logs
+    Worker1 --> Logs
+    Worker2 --> Logs
+
+    BE1 --> Metrics
+    BE2 --> Metrics
+    BE3 --> Metrics
+    Worker1 --> Metrics
+    Worker2 --> Metrics
+
+    %% Styling
+    classDef external fill:#e1f5fe
+    classDef frontend fill:#f3e5f5
+    classDef backend fill:#e8f5e8
+    classDef data fill:#fff3e0
+    classDef monitoring fill:#fce4ec
+
+    class Clerk,Users external
+    class FE1,FE2 frontend
+    class BE1,BE2,BE3,Worker1,Worker2 backend
+    class Redis,DB,DBRead data
+    class Logs,Metrics monitoring

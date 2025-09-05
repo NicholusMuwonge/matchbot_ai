@@ -1,0 +1,71 @@
+graph TB
+    subgraph "External Threats"
+        Attacker[Malicious Actor]
+        Bot[Automated Bot]
+    end
+
+    subgraph "Security Layers"
+        WAF[Web Application Firewall]
+        RateLimit[Rate Limiting]
+        HTTPS[TLS/HTTPS]
+        CORS[CORS Policy]
+    end
+
+    subgraph "Authentication Security"
+        ClerkAuth[Clerk Authentication]
+        JWTValidation[JWT Token Validation]
+        SessionMgmt[Session Management]
+        MFA[Multi-Factor Auth]
+    end
+
+    subgraph "API Security"
+        APIKeys[API Key Management]
+        WebhookSig[Webhook Signature Verification]
+        InputValidation[Input Validation]
+        OutputSanitization[Output Sanitization]
+    end
+
+    subgraph "Data Security"
+        Encryption[Data Encryption at Rest]
+        Transit[Data Encryption in Transit]
+        SecretMgmt[Secret Management]
+        AuditLog[Audit Logging]
+    end
+
+    subgraph "Infrastructure Security"
+        NetworkSeg[Network Segmentation]
+        AccessControl[Access Control]
+        Monitoring[Security Monitoring]
+        Backup[Secure Backups]
+    end
+
+    %% Threat protection flow
+    Attacker --> WAF
+    Bot --> WAF
+    WAF --> RateLimit
+    RateLimit --> HTTPS
+    HTTPS --> CORS
+
+    %% Authentication flow
+    CORS --> ClerkAuth
+    ClerkAuth --> JWTValidation
+    JWTValidation --> SessionMgmt
+    SessionMgmt --> MFA
+
+    %% API security
+    MFA --> APIKeys
+    APIKeys --> WebhookSig
+    WebhookSig --> InputValidation
+    InputValidation --> OutputSanitization
+
+    %% Data protection
+    OutputSanitization --> Encryption
+    Encryption --> Transit
+    Transit --> SecretMgmt
+    SecretMgmt --> AuditLog
+
+    %% Infrastructure
+    AuditLog --> NetworkSeg
+    NetworkSeg --> AccessControl
+    AccessControl --> Monitoring
+    Monitoring --> Backup
