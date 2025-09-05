@@ -11,7 +11,6 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./src/features/auth/tests/test-setup.ts"],
     include: [
       "src/**/*.{test,spec}.{ts,tsx}",
       // Exclude e2e tests to avoid mixing with unit tests
