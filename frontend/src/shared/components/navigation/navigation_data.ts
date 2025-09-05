@@ -1,3 +1,4 @@
+import type { NavigationItem } from "@/shared/components/navigation/types"
 import {
   FiBarChart,
   FiBriefcase,
@@ -7,7 +8,6 @@ import {
   FiUser,
   FiUsers,
 } from "react-icons/fi"
-import type { NavigationItem } from "@/shared/components/navigation/types"
 
 export const navigationItems: NavigationItem[] = [
   { icon: FiHome, title: "Dashboard", path: "/" },

@@ -9,7 +9,10 @@ export interface RoleDisplayProps {
 }
 
 const RoleDisplay = React.forwardRef<HTMLDivElement, RoleDisplayProps>(
-  function RoleDisplay({ size = "sm", variant = "subtle", showLabel = false }, ref) {
+  function RoleDisplay(
+    { size = "sm", variant = "subtle", showLabel = false },
+    ref,
+  ) {
     const { sessionClaims, isLoaded } = useAuth()
 
     if (!isLoaded) {
@@ -56,7 +59,7 @@ const RoleDisplay = React.forwardRef<HTMLDivElement, RoleDisplayProps>(
         </Badge>
       </div>
     )
-  }
+  },
 )
 
 export default RoleDisplay

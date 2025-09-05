@@ -1,9 +1,8 @@
 import { Box, Flex } from "@chakra-ui/react"
 import type { ReactNode } from "react"
 
-import { MobileOverlay, Navbar, Sidebar } from "@/shared/components"
-import { SIDEBAR_WIDTHS } from "@/shared/constants/layout"
-import { useNavigationStoreWithBreakpoint } from "@/shared/store/navigation_store"
+import { Navbar, Sidebar } from "@/shared/components"
+import { SidebarProvider } from "@/shared/contexts/SidebarContext"
 
 interface DashboardProps {
   children: ReactNode
@@ -11,10 +10,17 @@ interface DashboardProps {
 
 function Dashboard({ children }: DashboardProps) {
   return (
-    <Flex minH="100vh" bg="bg.default" data-testid="dashboard-layout" w="100vw" overflow="hidden">
-      <MobileOverlay />
-      {children}
-    </Flex>
+    <SidebarProvider>
+      <Flex
+        minH="100vh"
+        bg="bg.default"
+        data-testid="dashboard-layout"
+        w="100vw"
+        overflow="hidden"
+      >
+        {children}
+      </Flex>
+    </SidebarProvider>
   )
 }
 
@@ -24,11 +30,7 @@ function DashboardSidebar() {
 
 function DashboardHeader() {
   return (
-    <Flex
-      as="header"
-      w="100%"
-      data-testid="dashboard-header"
-    >
+    <Flex as="header" w="100%" data-testid="dashboard-header">
       <Navbar />
     </Flex>
   )
@@ -39,23 +41,11 @@ interface DashboardContentProps {
 }
 
 function DashboardContent({ children }: DashboardContentProps) {
-  const { isExpanded, isMobile, isTablet, isLarge } =
-    useNavigationStoreWithBreakpoint()
-
-  const getContentWidth = () => {
-    if (isMobile) return "100%"
-    if (isTablet) return "100%"
-    if (isLarge && isExpanded) return `calc(100vw - ${SIDEBAR_WIDTHS.EXPANDED})`
-    if (isLarge && !isExpanded) return `calc(100vw - ${SIDEBAR_WIDTHS.COLLAPSED})`
-    return "100%"
-  }
-
   return (
     <Flex
       direction="column"
-      w={getContentWidth()}
-      maxW={getContentWidth()}
-      transition="width 0.2s ease-out"
+      w="100%"
+      flex={1}
       data-testid="dashboard-content"
       overflow="hidden"
     >
