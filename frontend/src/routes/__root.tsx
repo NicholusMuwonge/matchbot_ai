@@ -2,6 +2,7 @@ import { Outlet, createRootRouteWithContext } from "@tanstack/react-router"
 import React, { Suspense } from "react"
 
 import { NotFound } from "@/shared/components"
+import { RouteGuard } from "@/components/RouteGuard"
 
 interface MyRouterContext {
   auth: {
@@ -32,7 +33,9 @@ const TanStackDevtools =
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () => (
     <>
-      <Outlet />
+      <RouteGuard>
+        <Outlet />
+      </RouteGuard>
       <Suspense>
         <TanStackDevtools />
       </Suspense>

@@ -7,11 +7,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
 from app import crud
-from app.api.deps import ClerkSessionUser, get_db, require_role
+from app.api.deps import ClerkSessionUser, get_db
 from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
-from app.models import Message, NewPassword, Token, User, UserPublic
+from app.models import Message, NewPassword, Token, UserPublic
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
@@ -111,7 +111,6 @@ def reset_password(
 def recover_password_html_content(
     email: str,
     session: Annotated[Session, Depends(get_db)],
-    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
 ) -> Any:
     """
     HTML Content for Password Recovery

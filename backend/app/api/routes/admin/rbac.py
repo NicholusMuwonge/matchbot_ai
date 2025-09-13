@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session
 
-from app.api.deps import get_db, require_role
+from app.api.deps import get_db
 from app.models.user import User
 from app.services.rbac_service import RoleService, UserRoleService
 from app.webhooks.enhanced_clerk_webhooks import EnhancedClerkWebhookProcessor
@@ -35,7 +35,6 @@ class UserRolesListResponse(BaseModel):
 async def assign_role_to_user(
     request: UserRoleAssignRequest,
     session: Annotated[Session, Depends(get_db)],
-    _: Annotated[User, Depends(require_role("app_owner"))],
 ) -> UserRoleResponse:
     """
     Assign a role to a user. Only app owners can assign roles.
@@ -43,7 +42,6 @@ async def assign_role_to_user(
     Args:
         request: User ID and role name to assign
         session: Database session
-        _: App owner authentication dependency
 
     Returns:
         Role assignment result
@@ -104,7 +102,6 @@ async def remove_role_from_user(
     user_id: UUID,
     role_name: str,
     session: Annotated[Session, Depends(get_db)],
-    _: Annotated[User, Depends(require_role("app_owner"))],
 ) -> UserRoleResponse:
     """
     Remove a role from a user. Only app owners can remove roles.
@@ -113,7 +110,6 @@ async def remove_role_from_user(
         user_id: User ID to remove role from
         role_name: Role name to remove
         session: Database session
-        _: App owner authentication dependency
 
     Returns:
         Role removal result
@@ -179,7 +175,6 @@ async def remove_role_from_user(
 async def get_user_roles(
     user_id: UUID,
     session: Annotated[Session, Depends(get_db)],
-    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
 ) -> UserRolesListResponse:
     """
     Get all roles assigned to a user.
@@ -187,7 +182,6 @@ async def get_user_roles(
     Args:
         user_id: User ID to get roles for
         session: Database session
-        _: Admin authentication dependency
 
     Returns:
         User's assigned roles

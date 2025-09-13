@@ -1,5 +1,5 @@
 import { Badge, Text } from "@chakra-ui/react"
-import { useAuth } from "@clerk/clerk-react"
+import { useAuthStore } from "@/shared/stores/authStore"
 import * as React from "react"
 
 export interface RoleDisplayProps {
@@ -13,16 +13,13 @@ const RoleDisplay = React.forwardRef<HTMLDivElement, RoleDisplayProps>(
     { size = "sm", variant = "subtle", showLabel = false },
     ref,
   ) {
-    const { sessionClaims, isLoaded } = useAuth()
+    const { userRole, isAppOwner, isLoaded } = useAuthStore()
 
     if (!isLoaded) {
       return null
     }
 
-    const role = sessionClaims?.role as string
-    const isAppOwner = sessionClaims?.isAppOwner as boolean
-
-    if (!role && !isAppOwner) {
+    if (!userRole && !isAppOwner) {
       return null
     }
 
@@ -41,7 +38,7 @@ const RoleDisplay = React.forwardRef<HTMLDivElement, RoleDisplayProps>(
       }
     }
 
-    const displayRole = isAppOwner ? "Owner" : role
+    const displayRole = isAppOwner ? "Owner" : userRole || "User"
 
     return (
       <div ref={ref}>

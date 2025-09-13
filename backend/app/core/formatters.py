@@ -110,27 +110,3 @@ class TeamResponseFormatter:
             "description": org_data["public_metadata"].get("description"),
             "max_users": org_data["public_metadata"].get("max_users"),
         }
-
-
-class AuthOptionsBuilder:
-    """Utility for building authentication options consistently."""
-
-    @staticmethod
-    def get_default_authorized_parties(
-        frontend_host: str | None = None, domain: str | None = None
-    ) -> list[str]:
-        """Get default authorized parties for authentication."""
-        return [frontend_host or "http://localhost:3000", domain or "localhost"]
-
-    @staticmethod
-    def format_auth_result(
-        request_state: Any, accepts_token: list[str] | None = None
-    ) -> dict[str, Any]:
-        """Format authentication result consistently."""
-        return {
-            "valid": True,
-            "user_id": getattr(request_state, "user_id", None),
-            "session_id": getattr(request_state, "session_id", None),
-            "organization_id": getattr(request_state, "organization_id", None),
-            "token_type": accepts_token[0] if accepts_token else "session",
-        }

@@ -10,7 +10,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  plugins: [react(), TanStackRouterVite()],
+  plugins: [
+    react(),
+    TanStackRouterVite({
+      routeFileIgnorePattern: ".*\\.test\\.(ts|tsx)$",
+      generatedRouteTree: "./src/routeTree.gen.ts",
+      routesDirectory: "./src/routes",
+      routeFilePrefix: ""
+    })
+  ],
   server: {
     host: "0.0.0.0", // Allow external connections for Docker
     port: 5173,

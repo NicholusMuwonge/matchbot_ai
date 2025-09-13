@@ -23,7 +23,8 @@ Handles session validation and current user retrieval only
 - `/me`: Current user retrieval only (auth handled by dependency)
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Security
+from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 
 from app.api.deps import ClerkSessionUser
@@ -31,6 +32,9 @@ from app.models import User
 from app.services.clerk_auth import ClerkAuthenticationError, ClerkService
 
 router = APIRouter()
+
+# Security scheme for Swagger UI
+security = HTTPBearer()
 
 
 class SessionValidationRequest(BaseModel):
@@ -76,12 +80,15 @@ async def validate_session(
 # See: /webhooks/clerk for webhook handling
 
 
-@router.get("/me", response_model=User)
+@router.get("/me", response_model=User, dependencies=[Security(security)])
 async def get_current_user(current_user: ClerkSessionUser) -> User:
     """
     Get the current authenticated user using session token.
 
     Single responsibility: Return current user info only.
     Authentication and user sync handled by ClerkSessionUser dependency.
+
+    **Authentication Required**: Use Bearer token in Authorization header.
+    Get your token from: /api/v1/swagger-auth/get-token-from-browser
     """
     return current_user

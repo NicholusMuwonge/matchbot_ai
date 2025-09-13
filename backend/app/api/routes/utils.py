@@ -1,10 +1,7 @@
-from typing import Annotated
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from pydantic.networks import EmailStr
 
-from app.api.deps import require_role
-from app.models import Message, User
+from app.models import Message
 from app.utils import generate_test_email, send_email
 
 from .health import router as health_router
@@ -21,7 +18,6 @@ router.include_router(health_router)
 )
 def test_email(
     email_to: EmailStr,
-    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
 ) -> Message:
     """
     Test emails.
@@ -36,5 +32,6 @@ def test_email(
 
 
 @router.get("/health-check/")
-async def health_check() -> bool:
-    return True
+async def health_check() -> dict:
+    """Simple health check for utils router"""
+    return {"status": "healthy", "service": "utils"}

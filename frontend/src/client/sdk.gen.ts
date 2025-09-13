@@ -63,7 +63,7 @@ export class ItemsService {
   ): CancelablePromise<ItemsReadItemsResponse> {
     return __request(OpenAPI, {
       method: "GET",
-      url: "/api/v1/items/",
+      url: "/api/v1/items",
       query: {
         skip: data.skip,
         limit: data.limit,
@@ -87,7 +87,7 @@ export class ItemsService {
   ): CancelablePromise<ItemsCreateItemResponse> {
     return __request(OpenAPI, {
       method: "POST",
-      url: "/api/v1/items/",
+      url: "/api/v1/items",
       body: data.requestBody,
       mediaType: "application/json",
       errors: {
@@ -313,7 +313,7 @@ export class UsersService {
   ): CancelablePromise<UsersReadUsersResponse> {
     return __request(OpenAPI, {
       method: "GET",
-      url: "/api/v1/users/",
+      url: "/api/v1/users",
       query: {
         skip: data.skip,
         limit: data.limit,
@@ -337,7 +337,7 @@ export class UsersService {
   ): CancelablePromise<UsersCreateUserResponse> {
     return __request(OpenAPI, {
       method: "POST",
-      url: "/api/v1/users/",
+      url: "/api/v1/users",
       body: data.requestBody,
       mediaType: "application/json",
       errors: {

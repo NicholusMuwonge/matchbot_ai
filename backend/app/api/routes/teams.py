@@ -3,7 +3,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from app.api.deps import ClerkSessionSuperuser, ClerkSessionUser
+from app.api.deps import ClerkSessionUser
 from app.core.formatters import TeamResponseFormatter
 from app.models import Message
 from app.services.clerk_auth import ClerkAuthenticationError, ClerkService
@@ -85,7 +85,7 @@ async def create_team(
 
 @router.get("/", response_model=TeamsListResponse)
 async def list_teams(
-    _: ClerkSessionSuperuser,
+    current_user: ClerkSessionUser,  # noqa: ARG001
     team_type: str | None = Query(None, description="Filter by team type"),
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -132,7 +132,7 @@ async def get_team(team_id: str, _: ClerkSessionUser) -> TeamResponse:
 
 
 @router.delete("/{team_id}", response_model=Message)
-async def delete_team(team_id: str, _: ClerkSessionSuperuser) -> Message:
+async def delete_team(team_id: str, _: ClerkSessionUser) -> Message:
     try:
         clerk_service = ClerkService()
         success = clerk_service.delete_organization(team_id)

@@ -4,7 +4,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, func, select
 
-from app.api.deps import ClerkSessionUser, get_db, require_role
+from app.api.deps import ClerkSessionUser, get_db
 from app.models import (
     Item,
     ItemCreate,
@@ -12,12 +12,12 @@ from app.models import (
     ItemsPublic,
     ItemUpdate,
     Message,
-    User,
 )
 
 router = APIRouter(prefix="/items", tags=["items"])
 
 
+@router.get("", response_model=ItemsPublic)
 @router.get("/", response_model=ItemsPublic)
 def read_my_items(
     session: Annotated[Session, Depends(get_db)],
@@ -42,7 +42,6 @@ def read_my_items(
 @router.get("/admin/all", response_model=ItemsPublic)
 def read_all_items(
     session: Annotated[Session, Depends(get_db)],
-    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
@@ -76,7 +75,6 @@ def read_my_item(
 @router.get("/admin/{id}", response_model=ItemPublic)
 def read_any_item(
     session: Annotated[Session, Depends(get_db)],
-    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
     id: uuid.UUID,
 ) -> Any:
     """
@@ -88,6 +86,7 @@ def read_any_item(
     return item
 
 
+@router.post("", response_model=ItemPublic)
 @router.post("/", response_model=ItemPublic)
 def create_item(
     *,
@@ -133,7 +132,6 @@ def update_my_item(
 def update_any_item(
     *,
     session: Annotated[Session, Depends(get_db)],
-    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
     id: uuid.UUID,
     item_in: ItemUpdate,
 ) -> Any:
@@ -173,7 +171,6 @@ def delete_my_item(
 @router.delete("/admin/{id}")
 def delete_any_item(
     session: Annotated[Session, Depends(get_db)],
-    _: Annotated[User, Depends(require_role(["app_owner", "platform_admin"]))],
     id: uuid.UUID,
 ) -> Message:
     """
