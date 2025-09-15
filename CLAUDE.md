@@ -16,8 +16,36 @@ For each change you make, you must create a new branch. After implementing chang
 - Use descriptive function and variable names
 - Keep functions under 50 lines when possible
 
-## Security Guidelines
-- NEVER commit sensitive files like .env, .env.local, .env.production to version control
-- Always ensure .env files are in .gitignore before committing
+## 🚨 CRITICAL SECURITY GUIDELINES 🚨
+
+### ABSOLUTELY FORBIDDEN - NEVER HARDCODE SECRETS
+**⚠️ SECURITY VIOLATION DETECTED: Hardcoded Clerk secret key found in docker-compose.yml**
+- NEVER hardcode API keys, tokens, or secrets directly in code files
+- NEVER commit real API keys to version control (e.g., sk_test_*, sk_live_*, pk_test_*, pk_live_*)
+- ALWAYS use environment variables for ALL sensitive configuration
+
+### Environment Variable Requirements
+- ALL secrets MUST use environment variable references: `${VAR_NAME}`
+- Use `${VAR_NAME?Variable not set}` syntax in docker-compose.yml to enforce required variables
+- NEVER put actual secret values in docker-compose.yml, only variable references
+
+### Secret Patterns to Watch For
+- Clerk Keys: `sk_test_*`, `sk_live_*`, `pk_test_*`, `pk_live_*`
+- API Keys: `api_key`, `apikey`, `api-key`, `secret_key`
+- Tokens: `access_token`, `auth_token`, `bearer`
+- Cloud Credentials: `AWS_ACCESS_KEY`, `AWS_SECRET`, `GITHUB_TOKEN`
+- Database Passwords: Never hardcode database credentials
+
+### Best Practices
+- NEVER commit .env, .env.local, .env.production files
+- Always verify .env files are in .gitignore before first commit
 - Use .env.example with placeholder values for documentation
-- Remove any sensitive data from version control immediately if accidentally committed
+- Rotate any accidentally exposed secrets IMMEDIATELY
+- Scan codebase for secrets before every commit
+- Review docker-compose.yml and configuration files for hardcoded values
+
+### If Secrets Are Accidentally Exposed
+1. Rotate the compromised credentials immediately
+2. Remove the secret from version control history
+3. Audit logs for any unauthorized access
+4. Update all environments with new credentials
