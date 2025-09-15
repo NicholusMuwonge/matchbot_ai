@@ -10,11 +10,4 @@ from app.tests.fixtures.database_fixtures import (  # noqa: F401
     setup_test_db,
 )
 from app.tests.fixtures.environment_fixtures import setup_clerk_test_env  # noqa: F401
-from app.tests.fixtures.factory_fixtures import (  # noqa: F401
-    clerk_data_factory,
-    clerk_user_factory,
-    clerk_webhook_factory,
-    user_factory,
-    webhook_factory,
-)
 from app.tests.fixtures.redis_fixtures import redis_client, redis_server  # noqa: F401

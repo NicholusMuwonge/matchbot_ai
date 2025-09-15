@@ -1,62 +1,98 @@
 import uuid
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, func, select
 
-from app.api.deps import CurrentUser, SessionDep
-from app.models import Item, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate, Message
+from app.api.deps import ClerkSessionUser, get_db
+from app.models import (
+    Item,
+    ItemCreate,
+    ItemPublic,
+    ItemsPublic,
+    ItemUpdate,
+    Message,
+)
 
 router = APIRouter(prefix="/items", tags=["items"])
 
 
+@router.get("", response_model=ItemsPublic)
 @router.get("/", response_model=ItemsPublic)
-def read_items(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+def read_my_items(
+    session: Annotated[Session, Depends(get_db)],
+    current_user: ClerkSessionUser,
+    skip: int = 0,
+    limit: int = 100,
 ) -> Any:
     """
-    Retrieve items.
+    Get items owned by current user.
     """
+    count_statement = (
+        select(func.count()).select_from(Item).where(Item.owner_id == current_user.id)
+    )
+    count = session.exec(count_statement).one()
+    statement = (
+        select(Item).where(Item.owner_id == current_user.id).offset(skip).limit(limit)
+    )
+    items = session.exec(statement).all()
+    return ItemsPublic(data=items, count=count)
 
-    if current_user.is_superuser:
-        count_statement = select(func.count()).select_from(Item)
-        count = session.exec(count_statement).one()
-        statement = select(Item).offset(skip).limit(limit)
-        items = session.exec(statement).all()
-    else:
-        count_statement = (
-            select(func.count())
-            .select_from(Item)
-            .where(Item.owner_id == current_user.id)
-        )
-        count = session.exec(count_statement).one()
-        statement = (
-            select(Item)
-            .where(Item.owner_id == current_user.id)
-            .offset(skip)
-            .limit(limit)
-        )
-        items = session.exec(statement).all()
 
+@router.get("/admin/all", response_model=ItemsPublic)
+def read_all_items(
+    session: Annotated[Session, Depends(get_db)],
+    skip: int = 0,
+    limit: int = 100,
+) -> Any:
+    """
+    Admin-only: Get all items in system.
+    """
+    count_statement = select(func.count()).select_from(Item)
+    count = session.exec(count_statement).one()
+    statement = select(Item).offset(skip).limit(limit)
+    items = session.exec(statement).all()
     return ItemsPublic(data=items, count=count)
 
 
 @router.get("/{id}", response_model=ItemPublic)
-def read_item(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
+def read_my_item(
+    session: Annotated[Session, Depends(get_db)],
+    current_user: ClerkSessionUser,
+    id: uuid.UUID,
+) -> Any:
     """
-    Get item by ID.
+    Get item by ID (must be owned by current user).
     """
     item = session.get(Item, id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    if not current_user.is_superuser and (item.owner_id != current_user.id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+    if item.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
     return item
 
 
+@router.get("/admin/{id}", response_model=ItemPublic)
+def read_any_item(
+    session: Annotated[Session, Depends(get_db)],
+    id: uuid.UUID,
+) -> Any:
+    """
+    Admin-only: Get any item by ID.
+    """
+    item = session.get(Item, id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
+
+
+@router.post("", response_model=ItemPublic)
 @router.post("/", response_model=ItemPublic)
 def create_item(
-    *, session: SessionDep, current_user: CurrentUser, item_in: ItemCreate
+    *,
+    session: Annotated[Session, Depends(get_db)],
+    current_user: ClerkSessionUser,
+    item_in: ItemCreate,
 ) -> Any:
     """
     Create new item.
@@ -69,21 +105,42 @@ def create_item(
 
 
 @router.put("/{id}", response_model=ItemPublic)
-def update_item(
+def update_my_item(
     *,
-    session: SessionDep,
-    current_user: CurrentUser,
+    session: Annotated[Session, Depends(get_db)],
+    current_user: ClerkSessionUser,
     id: uuid.UUID,
     item_in: ItemUpdate,
 ) -> Any:
     """
-    Update an item.
+    Update an item owned by current user.
     """
     item = session.get(Item, id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    if not current_user.is_superuser and (item.owner_id != current_user.id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+    if item.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    update_dict = item_in.model_dump(exclude_unset=True)
+    item.sqlmodel_update(update_dict)
+    session.add(item)
+    session.commit()
+    session.refresh(item)
+    return item
+
+
+@router.put("/admin/{id}", response_model=ItemPublic)
+def update_any_item(
+    *,
+    session: Annotated[Session, Depends(get_db)],
+    id: uuid.UUID,
+    item_in: ItemUpdate,
+) -> Any:
+    """
+    Admin-only: Update any item.
+    """
+    item = session.get(Item, id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
     update_dict = item_in.model_dump(exclude_unset=True)
     item.sqlmodel_update(update_dict)
     session.add(item)
@@ -93,17 +150,35 @@ def update_item(
 
 
 @router.delete("/{id}")
-def delete_item(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+def delete_my_item(
+    session: Annotated[Session, Depends(get_db)],
+    current_user: ClerkSessionUser,
+    id: uuid.UUID,
 ) -> Message:
     """
-    Delete an item.
+    Delete an item owned by current user.
     """
     item = session.get(Item, id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    if not current_user.is_superuser and (item.owner_id != current_user.id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+    if item.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    session.delete(item)
+    session.commit()
+    return Message(message="Item deleted successfully")
+
+
+@router.delete("/admin/{id}")
+def delete_any_item(
+    session: Annotated[Session, Depends(get_db)],
+    id: uuid.UUID,
+) -> Message:
+    """
+    Admin-only: Delete any item.
+    """
+    item = session.get(Item, id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
     session.delete(item)
     session.commit()
     return Message(message="Item deleted successfully")

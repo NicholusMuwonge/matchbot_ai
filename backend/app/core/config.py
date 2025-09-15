@@ -45,9 +45,25 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def all_cors_origins(self) -> list[str]:
-        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
-            self.FRONTEND_HOST
+        base_origins = [
+            str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS
+        ] + [self.FRONTEND_HOST]
+
+        # Add common development origins and server IPs
+        additional_origins = [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:3000",
+            "http://0.0.0.0:5173",
+            "http://0.0.0.0:3000",
+            # Add your server's IP if different
+            "http://192.168.50.198:5173",
         ]
+
+        return base_origins + additional_origins
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
@@ -88,6 +104,12 @@ class Settings(BaseSettings):
     )
     CLERK_DEBUG: bool = Field(
         default=False, description="Enable debug logging for Clerk SDK operations"
+    )
+
+    # Testing Configuration
+    ENABLE_AUTH_TESTING: bool = Field(
+        default=False,
+        description="Enable mock authentication for testing (bypasses Clerk)",
     )
 
     @computed_field  # type: ignore[prop-decorator]

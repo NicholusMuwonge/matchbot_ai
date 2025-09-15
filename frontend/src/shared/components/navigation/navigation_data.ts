@@ -14,6 +14,12 @@ export const navigationItems: NavigationItem[] = [
   { icon: FiBriefcase, title: "Items", path: "/items" },
   {
     icon: FiUsers,
+    title: "Users",
+    path: "/users",
+    requiredRoles: ["admin", "app_owner"]  // Only admin and app_owner can see this
+  },
+  {
+    icon: FiUsers,
     title: "Team Management",
     path: "/team",
     children: [

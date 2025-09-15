@@ -1,23 +1,16 @@
+import logging
 from collections.abc import Generator
 from typing import Annotated
 
-import jwt
 from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPBearer, OAuth2PasswordBearer
-from jwt.exceptions import InvalidTokenError
-from pydantic import ValidationError
 from sqlmodel import Session
 
-from app.core import security
-from app.core.config import settings
 from app.core.db import engine
-from app.models import TokenPayload, User
-from app.services.clerk_auth import ClerkAuthenticationError, ClerkService
+from app.models import User
 from app.services.user_sync_service import UserSyncService
 
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/login/access-token"
-)
+# Configure logger for detailed error tracking
+logger = logging.getLogger(__name__)
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -26,241 +19,77 @@ def get_db() -> Generator[Session, None, None]:
 
 
 SessionDep = Annotated[Session, Depends(get_db)]
-TokenDep = Annotated[str, Depends(reusable_oauth2)]
 
 
-def get_current_user(session: SessionDep, token: TokenDep) -> User:
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
+def get_current_user_session(request: Request, session: SessionDep) -> User:
+    """
+    Get current user from middleware authentication.
+
+    This function now simply reads authentication data from request.state
+    that was set by AuthMiddleware, instead of doing authentication itself.
+    """
+    logger.info("🔥 get_current_user_session: Reading auth data from middleware")
+
+    # Check if middleware ran and set auth data
+    if not hasattr(request.state, "authenticated"):
+        logger.error(
+            "❌ AuthMiddleware did not run - request.state.authenticated missing"
         )
-        token_data = TokenPayload(**payload)
-    except (InvalidTokenError, ValidationError):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Authentication middleware not configured",
         )
-    user = session.get(User, token_data.sub)
+
+    # Check if authentication was successful
+    if not request.state.authenticated:
+        auth_error = getattr(request.state, "auth_error", "Authentication failed")
+        logger.error(f"❌ Authentication failed in middleware: {auth_error}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=auth_error,
+        )
+
+    # Get auth data from middleware
+    auth_data = request.state.auth_data
+    clerk_user_id = auth_data.get("user_id")
+
+    if not clerk_user_id:
+        logger.error("❌ No user ID in middleware auth data")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No user ID in authenticated request",
+        )
+
+    # Get user from database
+    from sqlmodel import select
+
+    statement = select(User).where(User.clerk_user_id == clerk_user_id)
+    user = session.exec(statement).first()
+
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        logger.info("🔍 User not found, attempting sync from Clerk")
+        sync_service = UserSyncService()
+        sync_result = sync_service.fetch_and_sync_user(clerk_user_id)
+
+        if sync_result and sync_result.get("user_id"):
+            user = session.get(User, sync_result["user_id"])
+
+    if not user:
+        logger.error("❌ User not found in database after sync attempt")
+        raise HTTPException(status_code=404, detail="User not found in database")
+
     if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        logger.error("❌ User account is inactive")
+        raise HTTPException(status_code=400, detail="User account is inactive")
+
+    user._auth_data = auth_data
+    user._auth_claims = auth_data.get("all_claims", {})
+
+    logger.info(f"✅ Got authenticated user from middleware: {user.email}")
     return user
 
 
-CurrentUser = Annotated[User, Depends(get_current_user)]
-
-
-def get_current_active_superuser(current_user: CurrentUser) -> User:
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
-        )
-    return current_user
-
-
-# Clerk Authentication Dependencies
-clerk_bearer = HTTPBearer()
-
-ClerkTokenDep = Annotated[str, Depends(clerk_bearer)]
-
-
-def get_clerk_current_user(
-    session: SessionDep, credentials: Annotated[HTTPBearer, Depends(clerk_bearer)]
-) -> User:
-    """
-    Get current user using Clerk session token validation
-    """
-    try:
-        token = credentials.credentials
-
-        # Validate session with Clerk
-        clerk_service = ClerkService()
-        session_data = clerk_service.validate_session_token(token)
-
-        if not session_data.get("valid"):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired session token",
-            )
-
-        clerk_user_id = session_data.get("user_id")
-        if not clerk_user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid session - no user ID",
-            )
-
-        # Get or sync user from database
-        from sqlmodel import select
-
-        statement = select(User).where(User.clerk_user_id == clerk_user_id)
-        user = session.exec(statement).first()
-
-        if not user:
-            # Try to sync user from Clerk
-            sync_service = UserSyncService()
-            sync_result = sync_service.fetch_and_sync_user(clerk_user_id)
-
-            if sync_result and sync_result.get("user_id"):
-                user = session.get(User, sync_result["user_id"])
-
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found in database")
-
-        if not user.is_active:
-            raise HTTPException(status_code=400, detail="User account is inactive")
-
-        return user
-
-    except ClerkAuthenticationError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Authentication error: {str(e)}",
-        )
-
-
-ClerkCurrentUser = Annotated[User, Depends(get_clerk_current_user)]
-
-
-def get_clerk_current_active_superuser(current_user: ClerkCurrentUser) -> User:
-    """
-    Dependency to ensure current user has superuser privileges (Clerk-based)
-    """
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
-        )
-    return current_user
-
-
-ClerkCurrentSuperuser = Annotated[User, Depends(get_clerk_current_active_superuser)]
-
-
-# New improved auth dependencies using official Clerk SDK
-def get_current_user_session(request: Request, session: SessionDep) -> User:
-    """
-    Get current user using official Clerk SDK authenticate_request method.
-
-    Single responsibility: Session-based user authentication.
-    """
-    try:
-        clerk_service = ClerkService()
-        auth_data = clerk_service.authenticate_session(request)
-
-        clerk_user_id = auth_data.get("user_id")
-        if not clerk_user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="No user ID in authenticated request",
-            )
-
-        # Get user from database
-        from sqlmodel import select
-
-        statement = select(User).where(User.clerk_user_id == clerk_user_id)
-        user = session.exec(statement).first()
-
-        if not user:
-            # Try to sync user from Clerk
-            sync_service = UserSyncService()
-            sync_result = sync_service.fetch_and_sync_user(clerk_user_id)
-
-            if sync_result and sync_result.get("user_id"):
-                user = session.get(User, sync_result["user_id"])
-
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found in database")
-
-        if not user.is_active:
-            raise HTTPException(status_code=400, detail="User account is inactive")
-
-        return user
-
-    except ClerkAuthenticationError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Authentication error: {str(e)}",
-        )
-
-
-def get_current_user_machine_token(request: Request, session: SessionDep) -> User:
-    """
-    Get current user using machine/OAuth token authentication.
-
-    Single responsibility: Machine token-based user authentication.
-    For service-to-service communication, mobile apps, etc.
-    """
-    try:
-        clerk_service = ClerkService()
-        auth_data = clerk_service.authenticate_machine_token(request)
-
-        clerk_user_id = auth_data.get("user_id")
-        if not clerk_user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="No user ID in machine token",
-            )
-
-        # Get user from database
-        from sqlmodel import select
-
-        statement = select(User).where(User.clerk_user_id == clerk_user_id)
-        user = session.exec(statement).first()
-
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found in database")
-
-        if not user.is_active:
-            raise HTTPException(status_code=400, detail="User account is inactive")
-
-        return user
-
-    except ClerkAuthenticationError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Machine token authentication error: {str(e)}",
-        )
-
-
-def get_current_superuser_session(
-    current_user: Annotated[User, Depends(get_current_user_session)],
-) -> User:
-    """
-    Get current superuser using session authentication.
-
-    Single responsibility: Superuser privilege validation.
-    """
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
-        )
-    return current_user
-
-
-def get_current_superuser_machine_token(
-    current_user: Annotated[User, Depends(get_current_user_machine_token)],
-) -> User:
-    """
-    Get current superuser using machine token authentication.
-
-    Single responsibility: Superuser privilege validation for machine tokens.
-    """
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
-        )
-    return current_user
-
-
-# Type annotations for the new dependencies
 ClerkSessionUser = Annotated[User, Depends(get_current_user_session)]
-ClerkMachineUser = Annotated[User, Depends(get_current_user_machine_token)]
-ClerkSessionSuperuser = Annotated[User, Depends(get_current_superuser_session)]
-ClerkMachineSuperuser = Annotated[User, Depends(get_current_superuser_machine_token)]
+
+
+CurrentUser = ClerkSessionUser

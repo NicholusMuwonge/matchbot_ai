@@ -7,4 +7,5 @@ export interface NavigationItem {
   children?: NavigationItem[]
   badge?: number | string
   section?: string
+  requiredRoles?: string[]  // If specified, user must have one of these roles
 }

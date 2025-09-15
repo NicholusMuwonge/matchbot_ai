@@ -6,13 +6,16 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query"
 import { RouterProvider, createRouter } from "@tanstack/react-router"
-import React, { StrictMode } from "react"
+import React, { StrictMode, useEffect } from "react"
 import ReactDOM from "react-dom/client"
 import { routeTree } from "./routeTree.gen"
 
 import { ChakraProvider } from "@chakra-ui/react"
 import { ApiError, OpenAPI } from "./client"
-import { system } from "./theme"
+import { AuthTokenProvider } from "./providers/AuthTokenProvider"
+import { AuthSyncProvider } from "./providers/AuthSyncProvider"
+import { setupAuthInterceptors } from "./utils/setupAuth"
+import { system } from "./Theme"
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
@@ -22,15 +25,7 @@ if (!PUBLISHABLE_KEY) {
 
 OpenAPI.BASE =
   import.meta.env.VITE_API_URL ||
-  `${window.location.protocol}//${window.location.hostname}:8000`
-OpenAPI.TOKEN = async () => {
-  try {
-    const { getToken } = await import("@clerk/clerk-react")
-    return (await getToken()) || ""
-  } catch {
-    return ""
-  }
-}
+  "http://192.168.50.198:8004"
 
 const handleApiError = (error: Error) => {
   if (error instanceof ApiError && [401, 403].includes(error.status)) {
@@ -62,7 +57,21 @@ declare module "@tanstack/react-router" {
 
 function InnerApp() {
   const auth = useAuth()
-  return <RouterProvider router={router} context={{ auth }} />
+
+  // Setup auth interceptors once Clerk is ready
+  useEffect(() => {
+    if (auth.isLoaded) {
+      setupAuthInterceptors()
+    }
+  }, [auth.isLoaded])
+
+  return (
+    <AuthSyncProvider>
+      <AuthTokenProvider>
+        <RouterProvider router={router} context={{ auth }} />
+      </AuthTokenProvider>
+    </AuthSyncProvider>
+  )
 }
 
 function App() {
