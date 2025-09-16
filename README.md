@@ -1,199 +1,259 @@
-# MatchBot AI - Intelligent Document Processing Platform (MVP)
+# MatchBot AI - Financial Reconciliation Platform (MVP)
 
 ## Executive Summary
 
-MatchBot AI is a production-ready MVP that demonstrates a modern approach to intelligent document processing with AI-powered matching capabilities. Built with a microservices architecture, the platform enables businesses to automate document analysis, extract insights, and match entities using advanced fuzzy matching algorithms combined with OpenAI's language models.
+MatchBot AI is an MVP financial reconciliation platform designed to automate the matching and reconciliation of financial transactions across multiple data sources. Built as a **modular monolith** with clear service boundaries, the platform provides intelligent document processing, fuzzy matching algorithms, and AI-powered anomaly detection to streamline financial operations.
 
 ## System Architecture
 
 ![System Architecture](./docs/examples/mermaid_diagram.png)
 
-## Core Components & Design Decisions
+## Architectural Pattern: Modular Monolith
 
-### 1. API Gateway (FastAPI)
-**Component**: Central API orchestration layer
-**Rationale**: FastAPI was chosen for its async-first design, automatic OpenAPI documentation, and superior performance characteristics. The framework's native support for Pydantic models ensures type safety across the API boundary.
+This is **NOT a microservices architecture**. We've deliberately chosen a modular monolith pattern for this MVP, which provides:
+
+- **Single deployment unit** with logical service boundaries
+- **Shared database** with schema-level separation
+- **In-process communication** reducing network overhead
+- **Simplified operations** while maintaining clear module boundaries for future extraction
+
+### Why Not Microservices (Yet)
+
+1. **Premature Optimization**: Microservices add complexity that isn't justified at MVP scale
+2. **Development Velocity**: Monolithic architecture accelerates feature delivery
+3. **Operational Overhead**: Single deployment reduces DevOps complexity
+4. **Data Consistency**: Shared database simplifies transaction management
+5. **Future-Ready**: Module boundaries allow extraction to services when needed
+
+## Core Components & Technical Decisions
+
+### 1. API Layer (FastAPI)
+**Role**: Central request orchestration and business logic coordination
 
 **Key Responsibilities**:
-- JWT validation via Supabase Auth integration
-- Request routing and rate limiting
-- Billing integration with Stripe API
-- Dashboard query aggregation
+- JWT validation via Supabase Auth (planned migration from Clerk)
+- Request routing and validation
+- Billing integration with Stripe API (planned)
+- Real-time dashboard aggregation
+
+**Design Rationale**: FastAPI's async capabilities handle concurrent reconciliation jobs efficiently while maintaining type safety through Pydantic models.
 
 ### 2. Background Processing (Celery + Redis)
-**Component**: Distributed task queue system
-**Rationale**: The combination of Celery and Redis provides horizontal scalability for compute-intensive operations. This architecture decouples heavy processing from the request-response cycle, ensuring API responsiveness even under load.
+**Role**: Asynchronous job processing for compute-intensive reconciliation tasks
 
 **Processing Pipeline**:
-- File parsing and normalization
-- Data enrichment and transformation
-- AI matching job execution
-- Result caching and optimization
+1. File ingestion and parsing (CSV, Excel, PDF)
+2. Data normalization and standardization
+3. Fuzzy matching execution
+4. Result validation and conflict resolution
 
-### 3. Storage Layer
+**Technical Choice**: Celery provides reliable task distribution with Redis as both message broker and result backend, crucial for processing large financial datasets.
 
-#### PostgreSQL
-**Purpose**: Primary transactional datastore
-**Design Choice**: PostgreSQL's JSONB support allows flexible schema evolution during MVP iterations while maintaining ACID compliance for critical business data.
+### 3. Data Layer
 
-#### Redis
-**Purpose**: Caching layer and message broker
-**Implementation**: Implements a multi-tier caching strategy with TTL-based invalidation for frequently accessed summaries and intermediate results.
+#### PostgreSQL (Primary Store)
+- **Transaction Records**: Immutable ledger of all financial transactions
+- **Reconciliation Rules**: Configurable matching criteria
+- **Audit Trail**: Complete history of all reconciliation activities
+- **User Management**: RBAC with Clerk/Supabase integration
 
-#### File Storage (Local/S3)
-**Purpose**: Document and asset persistence
-**Trade-off**: Local storage for MVP reduces infrastructure complexity; S3 integration ready for production scaling.
+#### Redis (Cache & Queue)
+- **Session Management**: User session and authentication tokens
+- **Result Caching**: Frequently accessed reconciliation summaries
+- **Task Queue**: Celery job distribution
+- **Real-time Updates**: WebSocket message broker (planned)
 
-### 4. AI Integration Layer
-**Component**: OpenAI API + RapidFuzz
-**Architecture Decision**: Hybrid approach combining deterministic fuzzy matching (RapidFuzz) with LLM-based semantic understanding provides both speed and accuracy. The system falls back gracefully between methods based on confidence thresholds.
+#### File Storage
+- **Local Storage** (MVP): Uploaded financial documents
+- **S3 Migration Path**: Ready for cloud storage when scaling
 
-**Processing Flow**:
-1. Initial fuzzy matching for high-confidence pairs
-2. LLM invocation for ambiguous cases
-3. Result validation and confidence scoring
-4. Human-in-the-loop feedback integration
+### 4. AI/ML Integration (Planned)
+**OpenAI API + RapidFuzz Hybrid Approach**:
+- **Fuzzy Matching**: RapidFuzz for deterministic string matching
+- **Semantic Understanding**: LLM for complex pattern recognition
+- **Anomaly Detection**: AI-powered fraud and error detection
+- **Smart Categorization**: Automatic transaction classification
 
-### 5. Authentication & Authorization
-**Component**: Supabase Auth
-**Rationale**: Leveraging Supabase's battle-tested auth infrastructure accelerates MVP delivery while providing enterprise-grade security features out of the box.
+### 5. Authentication & Security
+**Current**: Clerk integration (implemented)
+**Migration Path**: Supabase Auth (planned)
 
 **Security Features**:
 - Row-level security (RLS) policies
 - JWT token validation
 - Role-based access control (RBAC)
-- Multi-factor authentication support
+- Audit logging for compliance
 
-## Technical Trade-offs & MVP Considerations
+## Financial Reconciliation Features (Roadmap)
 
-### Performance vs. Simplicity
-- **Decision**: Monolithic database with strategic caching over microservices with individual datastores
-- **Rationale**: Reduces operational complexity while maintaining sub-100ms response times for 95th percentile requests
+### Phase 1: Core Reconciliation (Current MVP)
+- [x] User authentication and authorization
+- [x] File upload infrastructure
+- [x] Background job processing
+- [ ] Basic transaction matching
+- [ ] Manual reconciliation workflow
+- [ ] Exception handling
 
-### Consistency vs. Availability
-- **Decision**: Synchronous processing for critical paths, async for bulk operations
-- **Rationale**: Ensures data consistency for billing and authentication while optimizing throughput for batch processing
+### Phase 2: Intelligent Matching (Q1 2025)
+- [ ] Fuzzy matching algorithms
+- [ ] Rule-based reconciliation engine
+- [ ] Bulk reconciliation processing
+- [ ] Reconciliation reporting
 
-### Cost vs. Scale
-- **Decision**: Serverless-ready architecture with containerized deployment
-- **Rationale**: Allows starting with minimal infrastructure costs while maintaining clear scaling paths
+### Phase 3: AI Enhancement (Q2 2025)
+- [ ] AI-powered matching suggestions
+- [ ] Anomaly detection
+- [ ] Predictive reconciliation
+- [ ] Natural language rule creation
 
-## Data Flow Architecture
+## Technical Trade-offs
 
-### Upload & Processing Pipeline
-1. **Ingestion**: React frontend handles multi-file uploads with resumable transfer support
-2. **Validation**: API layer performs schema validation and virus scanning
-3. **Queue**: Jobs enqueued to Celery with priority-based scheduling
-4. **Processing**: Workers parse files, extract features, normalize data
-5. **Storage**: Processed data persisted to PostgreSQL with metadata indexing
-6. **Notification**: WebSocket or polling-based status updates to frontend
+### Monolith vs Microservices
+- **Decision**: Modular monolith with service extraction points
+- **Rationale**: Faster iteration, simpler debugging, easier data consistency
+- **Future Path**: Extract heavy processors (matching engine, AI services) as needed
 
-### Query & Retrieval Flow
-1. **Request**: Dashboard queries aggregate data across multiple dimensions
-2. **Cache Check**: Redis cache consulted for recent computations
-3. **Database Query**: Optimized PostgreSQL queries with proper indexing
-4. **Post-processing**: Results enriched with cached AI summaries
-5. **Response**: JSON response with pagination and filtering metadata
+### Synchronous vs Asynchronous Processing
+- **Decision**: Hybrid - sync for UI operations, async for reconciliation
+- **Rationale**: Responsive UI while handling large dataset processing
+- **Implementation**: Celery for background jobs, FastAPI for real-time responses
 
-## Infrastructure & DevOps
+### Data Consistency vs Performance
+- **Decision**: PostgreSQL ACID with strategic caching
+- **Rationale**: Financial data requires consistency; cache derived data only
+- **Strategy**: Write-through cache for summaries, invalidation on updates
 
-### Containerization Strategy
-- **Docker Compose**: Orchestrates local development environment
-- **Multi-stage Builds**: Optimizes production image sizes (<100MB)
-- **Health Checks**: Ensures service availability and automatic recovery
+## Development Architecture
 
-### Monitoring & Observability
-- **Metrics**: Prometheus-compatible metrics exposed
-- **Logging**: Structured logging with correlation IDs
-- **Tracing**: OpenTelemetry instrumentation ready
+### Backend Structure
+```
+backend/
+├── app/
+│   ├── api/          # HTTP endpoints
+│   ├── core/         # Configuration, security
+│   ├── models/       # SQLModel entities
+│   ├── services/     # Business logic
+│   ├── tasks/        # Celery tasks
+│   └── webhooks/     # External integrations
+```
 
-### Deployment Architecture
-- **Blue-Green Deployments**: Zero-downtime updates
-- **Database Migrations**: Alembic-managed schema evolution
-- **Secret Management**: Environment-based configuration with validation
+### Frontend Structure
+```
+frontend/
+├── src/
+│   ├── routes/       # Page components
+│   ├── components/   # Reusable UI
+│   ├── features/     # Feature modules
+│   └── services/     # API clients
+```
+
+### Module Boundaries (Future Service Extraction Points)
+1. **Matching Engine**: Core reconciliation algorithms
+2. **File Processor**: Document parsing and normalization
+3. **Rule Engine**: Reconciliation rule evaluation
+4. **Reporting Service**: Analytics and report generation
+5. **Notification Service**: Alerts and communications
 
 ## Performance Characteristics
 
-### Benchmarks (MVP Baseline)
-- **API Response Time**: P50: 45ms, P95: 120ms, P99: 300ms
-- **File Processing**: 10MB document: ~3s, 100MB dataset: ~30s
-- **Concurrent Users**: Tested up to 500 concurrent connections
-- **Matching Accuracy**: 94% precision on test dataset
+### Current Capabilities
+- **Concurrent Users**: ~100 (current infrastructure)
+- **File Processing**: 10MB files in <5 seconds
+- **API Response**: P95 < 200ms
+- **Database Queries**: Optimized with proper indexing
 
-### Bottlenecks & Optimization Paths
-1. **Database Queries**: N+1 query patterns identified for refactoring
-2. **AI API Calls**: Batch processing implementation pending
-3. **File Parsing**: Memory optimization for large documents needed
+### Bottlenecks & Optimization Plan
+1. **Large File Processing**: Stream processing implementation pending
+2. **Complex Matching**: Algorithm optimization needed
+3. **Report Generation**: Background generation with caching
+4. **Real-time Updates**: WebSocket implementation planned
 
-## Security Architecture
-
-### Defense in Depth
-1. **Network Level**: API Gateway with rate limiting
-2. **Application Level**: Input validation and sanitization
-3. **Data Level**: Encryption at rest and in transit
-4. **Access Level**: RBAC with principle of least privilege
-
-### Compliance Considerations
-- **GDPR**: Data retention policies implemented
-- **SOC2**: Audit logging framework in place
-- **HIPAA**: Encryption standards met (pending full compliance)
-
-## Development Workflow
+## Infrastructure & DevOps
 
 ### Local Development
 ```bash
-# Prerequisites validated
+# Start all services
 docker-compose up -d
 
-# Backend at http://localhost:8000
-# Frontend at http://localhost:5173
-# API Docs at http://localhost:8000/docs
+# Access points
+# Frontend: http://localhost:5173
+# Backend API: http://localhost:8000
+# API Documentation: http://localhost:8000/docs
+# Database Admin: http://adminer.localhost
 ```
 
-### Testing Strategy
-- **Unit Tests**: 78% backend coverage, 65% frontend coverage
-- **Integration Tests**: Critical paths covered with Pytest
-- **E2E Tests**: Playwright automation for user journeys
-- **Load Tests**: Locust scripts for performance regression
+### Container Architecture
+- **Single Docker Compose**: Simplified orchestration
+- **Health Checks**: Automatic recovery
+- **Volume Persistence**: Data survives container restarts
+- **Network Isolation**: Internal service communication
 
-## Scaling Roadmap
+## Security & Compliance Considerations
 
-### Phase 1: Current MVP
-- Single-region deployment
-- Vertical scaling strategy
-- Manual monitoring
+### Financial Data Protection
+1. **Encryption**: TLS in transit, AES-256 at rest (planned)
+2. **Access Control**: RBAC with audit trails
+3. **Data Retention**: Configurable retention policies
+4. **PII Handling**: Tokenization for sensitive data (planned)
 
-### Phase 2: Growth (3-6 months)
+### Compliance Readiness
+- **Audit Logging**: All reconciliation actions logged
+- **Data Lineage**: Track data transformations
+- **Immutable Records**: Transaction history preservation
+- **Export Controls**: Regulated data export features
+
+## Known Limitations (MVP)
+
+1. **Scale Limits**: Single-server deployment
+2. **Real-time Updates**: Polling-based, not WebSocket
+3. **Matching Algorithms**: Basic fuzzy matching only
+4. **Report Formats**: Limited export options
+5. **Multi-tenancy**: Single tenant currently
+
+## Testing Strategy
+
+### Current Coverage
+- **Backend**: Unit tests for services
+- **Frontend**: Component testing with Playwright
+- **Integration**: API endpoint testing
+- **E2E**: Critical user journeys
+
+### Testing Priorities
+1. Reconciliation accuracy
+2. Data integrity
+3. Security boundaries
+4. Performance regression
+
+## Scaling Strategy
+
+### Immediate (Current State)
+- Vertical scaling on single server
+- Database query optimization
+- Redis caching layer
+
+### Short-term (3-6 months)
+- Read replicas for reporting
+- CDN for static assets
+- Background job prioritization
+
+### Long-term (6-12 months)
+- Service extraction (matching engine first)
+- Horizontal scaling with load balancer
 - Multi-region deployment
-- Horizontal scaling with load balancing
-- Automated monitoring and alerting
 
-### Phase 3: Enterprise (6-12 months)
-- Kubernetes orchestration
-- Service mesh implementation
-- Multi-tenancy support
+## Contributing
 
-## Known Limitations & Technical Debt
-
-1. **Frontend State Management**: Redux implementation pending for complex state
-2. **WebSocket Scaling**: Current implementation limited to single server
-3. **Search Functionality**: Full-text search via Elasticsearch not yet implemented
-4. **Batch Processing**: Queue optimization for large batch jobs needed
-5. **Mobile Responsiveness**: Desktop-first design, mobile optimization pending
-
-## Contributing & Development Standards
-
-### Code Quality
-- **Linting**: Ruff for Python, ESLint for TypeScript
-- **Formatting**: Black + isort for Python, Prettier for TypeScript
-- **Type Safety**: Mypy for Python, strict TypeScript configuration
-- **Documentation**: Docstrings for public APIs, README for modules
+### Development Standards
+- **Python**: Black, Ruff, type hints
+- **TypeScript**: Strict mode, no `any`
+- **Testing**: Minimum 70% coverage
+- **Documentation**: API docs via OpenAPI
 
 ### Architecture Principles
-- **SOLID**: Single responsibility enforced at service boundaries
-- **DRY**: Shared libraries for common functionality
-- **YAGNI**: MVP-focused, avoiding premature optimization
-- **12-Factor**: Environment-based configuration, stateless services
+- **Modular Boundaries**: Maintain service interfaces
+- **Database Migrations**: Alembic for schema changes
+- **Feature Flags**: Gradual rollout capability
+- **Backward Compatibility**: API versioning strategy
 
 ## License
 
@@ -201,4 +261,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-*This MVP represents approximately 3 months of development effort, prioritizing core functionality and establishing patterns for future scaling. The architecture balances pragmatic choices for rapid delivery with foundational decisions that support long-term growth.*
+*This MVP establishes the foundation for a comprehensive financial reconciliation platform. The modular monolith architecture provides the simplicity needed for rapid development while maintaining clear boundaries for future service extraction as the platform scales.*
