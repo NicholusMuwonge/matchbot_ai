@@ -26,6 +26,8 @@ dependencies = [
     "celery[redis]<6.0.0,>=5.3.0",
     # Clerk authentication - official Python SDK
     "clerk-backend-api>=1.0.0",
+    # MinIO SDK for S3-compatible object storage
+    "minio>=7.2.0",
 ]
 
 [tool.uv]

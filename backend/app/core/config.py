@@ -112,6 +112,26 @@ class Settings(BaseSettings):
         description="Enable mock authentication for testing (bypasses Clerk)",
     )
 
+    # MinIO Configuration
+    MINIO_ENDPOINT: str = Field(
+        default="localhost:9000", description="MinIO server endpoint"
+    )
+    MINIO_ROOT_USER: str = Field(
+        default="minioadmin", description="MinIO root username"
+    )
+    MINIO_ROOT_PASSWORD: str = Field(
+        default="changethis123", description="MinIO root password"
+    )
+    MINIO_USE_SSL: bool = Field(
+        default=False, description="Use SSL for MinIO connection"
+    )
+    MINIO_REGION: str = Field(
+        default="us-east-1", description="MinIO region for S3 compatibility"
+    )
+    MINIO_BUCKET_NAME: str = Field(
+        default="reconciliation-files", description="Default bucket for file storage"
+    )
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
