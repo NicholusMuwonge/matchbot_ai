@@ -42,6 +42,33 @@ services:
     networks:
       - default
 
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file:
+      - .env.local
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO to be ready...';
+      until mc alias set minio http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD; do
+        echo 'MinIO not ready, waiting...';
+        sleep 2;
+      done;
+      echo 'MinIO is ready. Creating default buckets...';
+      mc mb --ignore-existing minio/reconciliation-files;
+      mc mb --ignore-existing minio/temp-uploads;
+      mc mb --ignore-existing minio/processed-files;
+      echo 'Default buckets created successfully';
+      echo 'Setting bucket policies...';
+      mc anonymous set download minio/reconciliation-files;
+      echo 'Bucket initialization complete';
+      exit 0;
+      "
+    networks:
+      - default
+
   adminer:
     image: adminer
     restart: always
