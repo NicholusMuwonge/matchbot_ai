@@ -19,6 +19,29 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
 
+  minio:
+    image: minio/minio:latest
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    env_file:
+      - .env.local
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER?Variable not set}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD?Variable not set}
+    command: server /data --console-address ":9001"
+    networks:
+      - default
+
   adminer:
     image: adminer
     restart: always
@@ -262,6 +285,7 @@ services:
 volumes:
   app-db-data:
   redis-data:
+  minio-data:
 
 networks:
   traefik-public:
