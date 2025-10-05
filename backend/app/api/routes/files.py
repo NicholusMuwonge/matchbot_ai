@@ -4,35 +4,22 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi.security import HTTPBearer
-from pydantic import BaseModel
 from sqlmodel import Session
 
 from app.api.deps import ClerkSessionUser, get_db
 from app.models.file import File, FileStatus, StorageProvider
+from app.schemas.file import (
+    BulkConfirmUploadRequest,
+    BulkUploadRequest,
+    FileConfirmation,
+    FileUploadRequest,
+)
 from app.services.storage.minio_client import MinIOStorageException
 from app.services.storage.presigned_url_service import presigned_url_service
 
 router = APIRouter(prefix="/files", tags=["files"])
 security = HTTPBearer()
 logger = logging.getLogger(__name__)
-
-
-class FileUploadRequest(BaseModel):
-    external_id: str
-    filename: str
-
-
-class BulkUploadRequest(BaseModel):
-    files: list[FileUploadRequest]
-
-
-class FileConfirmation(BaseModel):
-    external_id: str
-    file_size: int
-
-
-class BulkConfirmUploadRequest(BaseModel):
-    files: list[FileConfirmation]
 
 
 def validate_files_for_confirmation(
