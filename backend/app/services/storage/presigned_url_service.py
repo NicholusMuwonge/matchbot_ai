@@ -94,6 +94,8 @@ class PresignedURLService:
             policy.add_content_length_range_condition(
                 1, self.config.UPLOAD_MAX_FILE_SIZE
             )
+            if content_type:
+                policy.add_equals_condition("Content-Type", content_type)
 
             client = self.minio_client.get_client()
             form_data = client.presigned_post_policy(policy)
@@ -461,6 +463,52 @@ class PresignedURLService:
                 "bucket": bucket_name,
                 "object": object_name,
             }
+
+    def generate_bulk_upload_urls(
+        self,
+        files: list[dict[str, Any]],
+        user_id: str,
+        reconciliation_id: str | None = None,
+        expires_in: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Generate presigned upload URLs for multiple files in bulk.
+
+        All files must pass validation or the entire request fails (atomic operation).
+
+        Args:
+            files: List of dictionaries with 'filename' and optional 'file_type'
+            user_id: User ID for tracking
+            reconciliation_id: Optional reconciliation ID to link files
+            expires_in: Optional expiry time in seconds
+
+        Returns:
+            List of dictionaries with upload URL details for each file
+
+        Raises:
+            MinIOStorageException: If any file fails validation or URL generation
+        """
+        results = []
+
+        for file_info in files:
+            filename = file_info.get("filename")
+            file_type = file_info.get("file_type", "source")
+
+            if not filename:
+                error_msg = f"Filename missing in bulk upload request: {file_info}"
+                logger.error(error_msg)
+                raise MinIOStorageException(error_msg)
+
+            url_data = self.generate_upload_url(
+                filename=filename,
+                file_type=file_type,
+                reconciliation_id=reconciliation_id,
+                user_id=user_id,
+                expires_in=expires_in,
+            )
+            results.append(url_data)
+
+        return results
 
 
 presigned_url_service = PresignedURLService()

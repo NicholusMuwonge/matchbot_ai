@@ -1,5 +1,27 @@
 # MAT-80: Backend MinIO Integration - Detailed Task Description
 
+## Progress Status: ~65% Complete
+
+### Completed Components ✅
+- MinIO SDK installation and configuration
+- MinIO client service with connection management
+- Presigned URL service (upload POST policies)
+- File metadata model with PostgreSQL schema
+- File upload API endpoints (single + bulk presigned URLs)
+- File confirmation endpoint with atomic transactions
+- External ID tracking for client-side upload flow
+- Transaction boundaries and fail-fast validation
+- Alembic migration for files table
+
+### Remaining Work 🚧
+- Download presigned URLs
+- File status tracking endpoint
+- Health check endpoint for storage
+- Error handling and retry mechanisms
+- Unit and integration tests
+- Logging and monitoring
+- Lifecycle policies for buckets
+
 ## Overview
 Integrate MinIO object storage with the MatchBot backend API to enable file upload/download capabilities for the reconciliation feature. This integration will provide presigned URLs for secure direct uploads, file metadata tracking, and robust error handling.
 
