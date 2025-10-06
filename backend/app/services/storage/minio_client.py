@@ -115,8 +115,13 @@ class MinIOClientService:
 
     def close(self) -> None:
         if self._client:
-            self._client = None
-            logger.info("MinIO client connection closed")
+            try:
+                self._client._http.clear()
+                logger.info("MinIO client connection pool cleared")
+            except Exception as e:
+                logger.warning(f"Error clearing connection pool: {e}")
+            finally:
+                self._client = None
 
 
 minio_client_service = MinIOClientService()
