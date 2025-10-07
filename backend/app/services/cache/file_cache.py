@@ -1,9 +1,13 @@
 import logging
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from app.core.config import settings
 from app.services.cache.redis_client import redis_client
 from app.services.storage.minio_client import minio_client_service
+
+if TYPE_CHECKING:
+    from app.models.file import File
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +42,7 @@ def cache_file_content(file_id: UUID, content: bytes, ttl: int = 86400) -> bool:
         return False
 
 
-def get_file_content(file_id: UUID, storage_path: str) -> bytes:
+def get_file_content(file: "File") -> bytes:
     """
     Get file content with lazy-loading cache pattern.
 
@@ -49,8 +53,7 @@ def get_file_content(file_id: UUID, storage_path: str) -> bytes:
     4. Return content
 
     Args:
-        file_id: UUID of the file
-        storage_path: MinIO object path
+        file: File instance with id and storage_path
 
     Returns:
         File content as bytes
@@ -58,33 +61,33 @@ def get_file_content(file_id: UUID, storage_path: str) -> bytes:
     Raises:
         Exception: If file not found in MinIO
     """
-    cache_key = get_cache_key(file_id)
+    cache_key = get_cache_key(file.id)
 
     # Try cache first (hot path)
     try:
         cached_content = redis_client.get(cache_key)
         if cached_content is not None:
-            logger.info(f"Cache HIT for file {file_id}")
+            logger.info(f"Cache HIT for file {file.id}")
             return cached_content
     except Exception as e:
-        logger.warning(f"Redis cache read failed for {file_id}: {e}")
+        logger.warning(f"Redis cache read failed for {file.id}: {e}")
 
     # Cache miss - load from MinIO (cold path)
-    logger.info(f"Cache MISS for file {file_id}, loading from MinIO")
+    logger.info(f"Cache MISS for file {file.id}, loading from MinIO")
     try:
         file_stream = minio_client_service.get_object(
             bucket_name=settings.MINIO_BUCKET_RECONCILIATION,
-            object_name=storage_path,
+            object_name=file.storage_path,
         )
         content = file_stream.read()
 
         # Cache for next time
-        cache_file_content(file_id, content)
+        cache_file_content(file.id, content)
 
         return content
 
     except Exception as e:
-        logger.error(f"Failed to load file {file_id} from MinIO: {e}")
+        logger.error(f"Failed to load file {file.id} from MinIO: {e}")
         raise
 
 
