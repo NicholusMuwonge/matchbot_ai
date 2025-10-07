@@ -29,13 +29,6 @@ logger = logging.getLogger(__name__)
     retry_jitter=True,
 )
 def process_uploaded_file(file_id: str):
-    """
-    Process a file after upload confirmation.
-    Retries automatically on MinIO/network errors.
-
-    Args:
-        file_id: UUID of the file to process
-    """
     with Session(engine) as session:
         file = session.exec(select(File).where(File.id == UUID(file_id))).first()
 
@@ -63,10 +56,8 @@ def process_uploaded_file(file_id: str):
                 f"Processing file {file_id}: {file.filename}, hash: {content_hash}"
             )
 
-            # Cache content in Redis (lazy-loading cache)
             cache_file_content(file.id, file_content, ttl=86400)
 
-            # Store metadata in PostgreSQL (NOT raw content)
             file.status = FileStatus.SYNCED
             file.file_hash = content_hash
             file.content = {

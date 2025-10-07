@@ -188,7 +188,6 @@ def test_generate_presigned_upload_url(
     test_user_id: str,
     session: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Test endpoint without auth - DO NOT USE IN PRODUCTION"""
     try:
         result = presigned_url_service.generate_upload_url(
             filename=request.filename,
@@ -227,7 +226,6 @@ def test_confirm_uploads(
     test_user_id: str,
     session: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Test endpoint without auth - DO NOT USE IN PRODUCTION"""
     try:
         external_ids = [f.external_id for f in request.files]
         logger.info(
