@@ -175,5 +175,3 @@ def confirm_uploads(
         logger.error(f"Transaction failed confirming file uploads: {e}")
         session.rollback()
         raise HTTPException(status_code=500, detail="Failed to confirm file uploads")
-
-

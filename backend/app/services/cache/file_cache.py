@@ -12,12 +12,12 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def get_cache_key(file_id: UUID) -> str:
+def get_cache_key(file_id: UUID | str) -> str:
     """Generate Redis cache key for file content."""
     return f"file_content:{file_id}"
 
 
-def cache_file_content(file_id: UUID, content: bytes, ttl: int = 86400) -> bool:
+def cache_file_content(file_id: UUID | str, content: bytes, ttl: int = 86400) -> bool:
     """
     Cache file content in Redis.
 
@@ -53,7 +53,7 @@ def get_file_content(file: "File") -> bytes:
     4. Return content
 
     Args:
-        file: File instance with id and storage_path
+        file: File instance with external_id and storage_path
 
     Returns:
         File content as bytes
@@ -61,18 +61,16 @@ def get_file_content(file: "File") -> bytes:
     Raises:
         Exception: If file not found in MinIO
     """
-    cache_key = get_cache_key(file.id)
+    cache_key = get_cache_key(file.external_id)
 
-    # Try cache first (hot path)
     try:
         cached_content = redis_client.get(cache_key)
         if cached_content is not None:
-            logger.info(f"Cache HIT for file {file.id}")
+            logger.info(f"Cache HIT for file {file.external_id}")
             return cached_content
     except Exception as e:
-        logger.warning(f"Redis cache read failed for {file.id}: {e}")
+        logger.warning(f"Redis cache read failed for {file.external_id}: {e}")
 
-    # Cache miss - load from MinIO (cold path)
     logger.info(f"Cache MISS for file {file.id}, loading from MinIO")
     try:
         file_stream = minio_client_service.get_object(
@@ -81,17 +79,16 @@ def get_file_content(file: "File") -> bytes:
         )
         content = file_stream.read()
 
-        # Cache for next time
-        cache_file_content(file.id, content)
+        cache_file_content(file.external_id, content)
 
         return content
 
     except Exception as e:
-        logger.error(f"Failed to load file {file.id} from MinIO: {e}")
+        logger.error(f"Failed to load file {file.external_id} from MinIO: {e}")
         raise
 
 
-def invalidate_file_cache(file_id: UUID) -> bool:
+def invalidate_file_cache(file_id: UUID | str) -> bool:
     """
     Invalidate (delete) cached file content.
 

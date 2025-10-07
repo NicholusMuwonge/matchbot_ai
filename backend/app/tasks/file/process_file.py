@@ -56,14 +56,13 @@ def process_uploaded_file(file_id: str):
                 f"Processing file {file_id}: {file.filename}, hash: {content_hash}"
             )
 
-            cache_file_content(file.id, file_content, ttl=86400)
+            cache_file_content(file.external_id, file_content, ttl=86400)
 
             file.status = FileStatus.SYNCED
             file.file_hash = content_hash
-            file.content = {
+            file.file_metadata = {
                 "size_bytes": len(file_content),
                 "cached_at": "redis",
-                "hash": content_hash,
             }
             session.commit()
 
