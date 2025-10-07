@@ -27,6 +27,23 @@ class PresignedURLService:
         self.config = config or storage_config
         self.minio_client = minio_client or MinIOClientService(self.config)
 
+        if (
+            self.config.MINIO_EXTERNAL_ENDPOINT
+            and self.config.MINIO_EXTERNAL_ENDPOINT != self.config.MINIO_ENDPOINT
+        ):
+            from app.core.storage_config import StorageConfig
+
+            external_config = StorageConfig(
+                MINIO_ENDPOINT=self.config.MINIO_EXTERNAL_ENDPOINT,
+                MINIO_ACCESS_KEY=self.config.MINIO_ACCESS_KEY,
+                MINIO_SECRET_KEY=self.config.MINIO_SECRET_KEY,
+                MINIO_SECURE=self.config.MINIO_SECURE,
+                MINIO_REGION=self.config.MINIO_REGION,
+            )
+            self.minio_external_client = MinIOClientService(external_config)
+        else:
+            self.minio_external_client = self.minio_client
+
     def _ensure_bucket_exists(self, bucket_name: str) -> None:
         try:
             if not self.minio_client.bucket_exists(bucket_name):
@@ -104,7 +121,7 @@ class PresignedURLService:
                 form_data["Content-Type"] = content_type
 
             result = {
-                "upload_url": f"{self.config.minio_url}/{bucket_name}",
+                "upload_url": f"{self.config.minio_external_url}/{bucket_name}",
                 "form_fields": form_data,
                 "file_id": file_id,
                 "object_name": object_name,
@@ -174,7 +191,7 @@ class PresignedURLService:
                     f'attachment; filename="{original_filename}"'
                 )
 
-            client = self.minio_client.get_client()
+            client = self.minio_external_client.get_client()
             url = client.presigned_get_object(
                 bucket_name=bucket_name,
                 object_name=object_name,

@@ -11,7 +11,11 @@ class StorageConfig(BaseSettings):
 
     MINIO_ENDPOINT: str = Field(
         default="minio:9000",
-        description="MinIO server endpoint (host:port)",
+        description="MinIO server endpoint (host:port) for backend connections",
+    )
+    MINIO_EXTERNAL_ENDPOINT: str | None = Field(
+        default=None,
+        description="MinIO external endpoint (host:port) for client-facing presigned URLs. If not set, uses MINIO_ENDPOINT",
     )
     MINIO_ACCESS_KEY: str = Field(
         default="minioadmin",
@@ -126,8 +130,16 @@ class StorageConfig(BaseSettings):
 
     @property
     def minio_url(self) -> str:
+        """Internal MinIO URL for backend connections"""
         protocol = "https" if self.MINIO_SECURE else "http"
         return f"{protocol}://{self.MINIO_ENDPOINT}"
+
+    @property
+    def minio_external_url(self) -> str:
+        """External MinIO URL for client-facing presigned URLs"""
+        protocol = "https" if self.MINIO_SECURE else "http"
+        endpoint = self.MINIO_EXTERNAL_ENDPOINT or self.MINIO_ENDPOINT
+        return f"{protocol}://{endpoint}"
 
     @property
     def required_buckets(self) -> list[str]:

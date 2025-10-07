@@ -17,7 +17,6 @@ from app.schemas.file import (
 )
 from app.services.storage.minio_client import (
     MinIOStorageException,
-    minio_client_service,
 )
 from app.services.storage.presigned_url_service import presigned_url_service
 
@@ -180,6 +179,7 @@ def confirm_uploads(
         session.rollback()
         raise HTTPException(status_code=500, detail="Failed to confirm file uploads")
 
+
 @router.get(
     "/{file_id}/download-url",
     response_model=dict[str, Any],
@@ -199,25 +199,21 @@ def generate_file_download_url(
 
     if file.status != FileStatus.SYNCED:
         raise HTTPException(
-            status_code=400, detail=f"File not ready for download. Status: {file.status}"
+            status_code=400,
+            detail=f"File not ready for download. Status: {file.status}",
         )
 
     try:
-        download_url = minio_client_service.generate_presigned_get_url(
+        result = presigned_url_service.generate_download_url(
             bucket_name=storage_config.MINIO_BUCKET_RECONCILIATION,
             object_name=file.storage_path,
-            expires_seconds=storage_config.DOWNLOAD_PRESIGNED_URL_EXPIRY,
-            response_headers={
-                "response-content-disposition": f'attachment; filename="{file.filename}"'
-            },
+            original_filename=file.filename,
+            expires_in=storage_config.DOWNLOAD_PRESIGNED_URL_EXPIRY,
         )
 
-        return {
-            "download_url": download_url,
-            "file_id": str(file.id),
-            "filename": file.filename,
-            "expires_in": storage_config.DOWNLOAD_PRESIGNED_URL_EXPIRY,
-        }
+        result["file_id"] = str(file.id)
+        result["filename"] = file.filename
+        return result
     except MinIOStorageException as e:
         logger.error(f"Failed to generate download URL for file {file_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate download URL")

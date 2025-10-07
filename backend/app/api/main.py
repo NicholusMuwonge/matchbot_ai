@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import auth, files, swagger_auth, users
+from app.api.routes import auth, files, items, login, swagger_auth, users
 from app.core.config import settings
 
 api_router = APIRouter()
@@ -9,6 +9,8 @@ api_router = APIRouter()
 api_router.include_router(users.router)
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(files.router)
+api_router.include_router(login.router)
+api_router.include_router(items.router)
 
 # Development/Testing routes (only in non-production)
 if settings.ENVIRONMENT != "production":
@@ -16,11 +18,9 @@ if settings.ENVIRONMENT != "production":
 
 # Temporarily disable other routes due to missing dependencies
 # api_router.include_router(utils.router)
-# api_router.include_router(login.router)
 # api_router.include_router(teams.router, prefix="/teams", tags=["teams"])
 # api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 # api_router.include_router(webhooks.router, prefix="/webhooks", tags=["webhooks"])
-# api_router.include_router(items.router)
 
 
 # Temporarily disable all conditional routes
