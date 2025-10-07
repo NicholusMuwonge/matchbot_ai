@@ -303,8 +303,7 @@ class PresignedURLService:
         try:
             response = self.minio_client.get_object(bucket_name, object_name)
             try:
-                for chunk in iter(lambda: response.read(chunk_size), b""):
-                    yield chunk
+                yield from iter(lambda: response.read(chunk_size), b"")
             finally:
                 response.close()
                 response.release_conn()
