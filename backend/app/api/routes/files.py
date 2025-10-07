@@ -55,7 +55,6 @@ def update_files_to_uploaded(
         file_record = file_map[confirmation.external_id]
         file_record.status = FileStatus.UPLOADED
         file_record.file_size_bytes = confirmation.file_size
-        file_record.expires_at = None
 
 
 @router.post(

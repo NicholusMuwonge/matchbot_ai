@@ -113,6 +113,16 @@ class FilesPublic(SQLModel):
 from sqlalchemy import inspect
 
 
+@event.listens_for(File, "before_update")
+def clear_expires_at_on_upload(_mapper, _connection, target):
+    """Clear expires_at when status changes to UPLOADED."""
+    state = inspect(target)
+    status_history = state.attrs.status.history
+
+    if status_history.has_changes() and target.status == FileStatus.UPLOADED:
+        target.expires_at = None
+
+
 @event.listens_for(File, "after_update")
 def process_uploaded_file_on_status_change(_mapper, _connection, target):
     """Queue file processing when status changes to UPLOADED."""
