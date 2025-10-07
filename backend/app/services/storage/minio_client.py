@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 
 from minio import Minio
 from minio.error import S3Error
@@ -105,6 +106,28 @@ class MinIOClientService:
         except S3Error as e:
             logger.error(f"Failed to get object: {e}")
             raise MinIOStorageException(f"Could not get object: {e}")
+
+    def generate_presigned_get_url(
+        self,
+        bucket_name: str,
+        object_name: str,
+        expires_seconds: int = 3600,
+        response_headers: dict | None = None,
+    ) -> str:
+        try:
+            url = self._client.presigned_get_object(
+                bucket_name,
+                object_name,
+                expires=timedelta(seconds=expires_seconds),
+                response_headers=response_headers,
+            )
+            logger.info(
+                f"Generated presigned GET URL for {object_name} (expires in {expires_seconds}s)"
+            )
+            return url
+        except S3Error as e:
+            logger.error(f"Failed to generate presigned GET URL: {e}")
+            raise MinIOStorageException(f"Could not generate download URL: {e}")
 
     def list_buckets(self):
         try:
