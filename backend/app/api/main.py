@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import auth, swagger_auth, users
+from app.api.routes import auth, files, swagger_auth, users
 from app.core.config import settings
 
 api_router = APIRouter()
@@ -8,6 +8,7 @@ api_router = APIRouter()
 # Core routes
 api_router.include_router(users.router)
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
+api_router.include_router(files.router)
 
 # Development/Testing routes (only in non-production)
 if settings.ENVIRONMENT != "production":

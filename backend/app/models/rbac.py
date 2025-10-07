@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 
 from sqlmodel import JSON, Field, Relationship, SQLModel
@@ -51,9 +52,9 @@ class UserRole(SQLModel, table=True):
     __tablename__ = "user_roles"
 
     id: int = Field(primary_key=True)
-    user_id: int = Field(foreign_key="user.id")
+    user_id: uuid.UUID = Field(foreign_key="user.id")
     role_id: int = Field(foreign_key="roles.id")
-    assigned_by: int | None = Field(default=None, foreign_key="user.id")
+    assigned_by: uuid.UUID | None = Field(default=None, foreign_key="user.id")
     assigned_at: datetime = Field(default_factory=datetime.now)
     expires_at: datetime | None = Field(default=None)
     is_active: bool = Field(default=True)

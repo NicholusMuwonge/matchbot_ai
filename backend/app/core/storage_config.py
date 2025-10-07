@@ -14,11 +14,11 @@ class StorageConfig(BaseSettings):
         description="MinIO server endpoint (host:port)",
     )
     MINIO_ACCESS_KEY: str = Field(
-        ...,
+        default="minioadmin",
         description="MinIO access key for authentication",
     )
     MINIO_SECRET_KEY: str = Field(
-        ...,
+        default="minioadmin",
         description="MinIO secret key for authentication",
     )
     MINIO_SECURE: bool = Field(

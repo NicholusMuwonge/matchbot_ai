@@ -10,6 +10,7 @@ from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
+    from app.models.file import File
     from app.models.item import Item
 
 
@@ -49,6 +50,7 @@ class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    files: list["File"] = Relationship(back_populates="user", cascade_delete=True)
 
     clerk_user_id: str | None = Field(default=None, unique=True, index=True)
     auth_provider: str = Field(default="local")

@@ -3,6 +3,16 @@ Models package for the application.
 """
 
 from .base import Message, NewPassword, Token, TokenPayload
+from .file import (
+    File,
+    FileBase,
+    FileCreate,
+    FilePublic,
+    FilesPublic,
+    FileStatus,
+    FileUpdate,
+    StorageProvider,
+)
 from .item import Item, ItemBase, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate
 from .rbac import Role, UserRole
 from .user import (
@@ -46,6 +56,15 @@ __all__ = [
     "ItemPublic",
     "ItemsPublic",
     "ItemUpdate",
+    # File models
+    "File",
+    "FileBase",
+    "FileCreate",
+    "FilePublic",
+    "FilesPublic",
+    "FileStatus",
+    "FileUpdate",
+    "StorageProvider",
     # Webhook models
     "WebhookEvent",
     "WebhookStateMachine",
