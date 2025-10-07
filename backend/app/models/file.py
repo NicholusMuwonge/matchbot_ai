@@ -3,9 +3,11 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Text
+from sqlalchemy import BigInteger, Text, event
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Column, Field, Relationship, SQLModel, select, text
+
+from app.tasks.file.process_file import process_uploaded_file
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -79,6 +81,7 @@ class File(FileBase, table=True):
         )
 
 
+
 class FileCreate(FileBase):
     user_id: uuid.UUID
     content: dict | None = None
@@ -105,3 +108,26 @@ class FilePublic(FileBase):
 class FilesPublic(SQLModel):
     data: list[FilePublic]
     count: int
+
+
+from sqlalchemy.orm import Session as SASession
+
+
+@event.listens_for(File.status, "set", propagate=True)
+def on_file_status_change(target, value, oldvalue, _initiator):
+    """Mark that status changed to UPLOADED, but don't queue yet."""
+    if oldvalue != value and value == FileStatus.UPLOADED:
+        target.expires_at = None
+        target._pending_processing = True
+
+
+@event.listens_for(SASession, "after_commit")
+def queue_file_processing_after_commit(session):
+    """
+    Queue file processing tasks only after successful commit.
+    Prevents orphaned tasks if transaction rolls back.
+    """
+    for obj in session.identity_map.values():
+        if isinstance(obj, File) and getattr(obj, "_pending_processing", False):
+            process_uploaded_file.delay(str(obj.id))
+            obj._pending_processing = False

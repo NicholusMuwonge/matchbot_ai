@@ -1,13 +1,15 @@
+import hashlib
 import logging
 from uuid import UUID
 
+from minio.error import S3Error
 from sqlmodel import Session, select
 
 from app.core.celery import celery_app
 from app.core.config import settings
 from app.core.db import engine
 from app.models.file import File, FileStatus
-from app.services.storage.minio_client import minio_client_service
+from app.services.storage.minio_client import MinIOStorageException, minio_client_service
 
 logger = logging.getLogger(__name__)
 
@@ -15,10 +17,16 @@ logger = logging.getLogger(__name__)
 @celery_app.task(
     time_limit=settings.REDIS_TASK_TIME_LIMIT,
     soft_time_limit=settings.REDIS_TASK_SOFT_TIME_LIMIT,
+    autoretry_for=(S3Error, MinIOStorageException, ConnectionError),
+    retry_kwargs={"max_retries": 3},
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
 )
 def process_uploaded_file(file_id: str):
     """
     Process a file after upload confirmation.
+    Retries automatically on MinIO/network errors.
 
     Args:
         file_id: UUID of the file to process
@@ -43,13 +51,39 @@ def process_uploaded_file(file_id: str):
                 object_name=file.storage_path
             )
 
-            logger.info(f"Processing file {file_id}: {file.filename}")
+            file_content = file_stream.read()
+            content_hash = hashlib.sha256(file_content).hexdigest()
+
+            logger.info(f"Processing file {file_id}: {file.filename}, hash: {content_hash}")
 
             file.status = FileStatus.SYNCED
+            file.content = {"raw": file_content.decode('utf-8')}
+            file.file_hash = content_hash
             session.commit()
 
+        except (S3Error, MinIOStorageException, ConnectionError) as e:
+            logger.warning(f"Retryable error processing file {file_id}: {e}")
+            file.status = FileStatus.UPLOADED
+            session.commit()
+            raise
+
         except Exception as e:
-            logger.error(f"Error processing file {file_id}: {e}")
+            logger.error(f"Fatal error processing file {file_id}: {e}")
             file.status = FileStatus.FAILED
             file.failure_reason = str(e)
             session.commit()
+
+
+def store_file_in_memory(file:File, file_stream: bytes):
+    """
+    Store file content in memory for further processing.
+
+    Args:
+        file: File object to update
+        file_stream: Byte stream of the file content
+    """
+    file.content = {"raw": file_stream.decode('utf-8')}
+    file.status = FileStatus.EXTRACTED
+    with Session(engine) as session:
+        session.add(file)
+        session.commit()
