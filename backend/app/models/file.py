@@ -110,24 +110,14 @@ class FilesPublic(SQLModel):
     count: int
 
 
-from sqlalchemy.orm import Session as SASession
+from sqlalchemy import inspect
 
 
-@event.listens_for(File.status, "set", propagate=True)
-def on_file_status_change(target, value, oldvalue, _initiator):
-    """Mark that status changed to UPLOADED, but don't queue yet."""
-    if oldvalue != value and value == FileStatus.UPLOADED:
-        target.expires_at = None
-        target._pending_processing = True
+@event.listens_for(File, "after_update")
+def process_uploaded_file_on_status_change(_mapper, _connection, target):
+    """Queue file processing when status changes to UPLOADED."""
+    state = inspect(target)
+    status_history = state.attrs.status.history
 
-
-@event.listens_for(SASession, "after_commit")
-def queue_file_processing_after_commit(session):
-    """
-    Queue file processing tasks only after successful commit.
-    Prevents orphaned tasks if transaction rolls back.
-    """
-    for obj in session.identity_map.values():
-        if isinstance(obj, File) and getattr(obj, "_pending_processing", False):
-            process_uploaded_file.delay(str(obj.id))
-            obj._pending_processing = False
+    if status_history.has_changes() and target.status == FileStatus.UPLOADED:
+        process_uploaded_file.delay(str(target.id))
