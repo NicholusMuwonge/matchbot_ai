@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 from app.core.celery import celery_app
 from app.core.config import settings
 from app.core.db import engine
+from app.core.storage_config import storage_config
 from app.models.file import File, FileStatus
 from app.services.cache.file_cache import cache_file_content
 from app.services.storage.minio_client import (
@@ -51,7 +52,7 @@ def process_uploaded_file(file_id: str):
             session.commit()
 
             file_stream = minio_client_service.get_object(
-                bucket_name=settings.MINIO_BUCKET_RECONCILIATION,
+                bucket_name=storage_config.MINIO_BUCKET_RECONCILIATION,
                 object_name=file.storage_path,
             )
 
