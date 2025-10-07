@@ -3,11 +3,9 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Text, event
+from sqlalchemy import BigInteger, Text, event, inspect
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Column, Field, Relationship, SQLModel, select, text
-
-from app.tasks.file.process_file import process_uploaded_file
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -81,7 +79,6 @@ class File(FileBase, table=True):
         )
 
 
-
 class FileCreate(FileBase):
     user_id: uuid.UUID
     content: dict | None = None
@@ -110,9 +107,6 @@ class FilesPublic(SQLModel):
     count: int
 
 
-from sqlalchemy import inspect
-
-
 @event.listens_for(File, "before_update")
 def clear_expires_at_on_upload(_mapper, _connection, target):
     """Clear expires_at when status changes to UPLOADED."""
@@ -126,6 +120,8 @@ def clear_expires_at_on_upload(_mapper, _connection, target):
 @event.listens_for(File, "after_update")
 def process_uploaded_file_on_status_change(_mapper, _connection, target):
     """Queue file processing when status changes to UPLOADED."""
+    from app.tasks.file.process_file import process_uploaded_file
+
     state = inspect(target)
     status_history = state.attrs.status.history
 

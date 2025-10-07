@@ -9,7 +9,11 @@ from app.core.celery import celery_app
 from app.core.config import settings
 from app.core.db import engine
 from app.models.file import File, FileStatus
-from app.services.storage.minio_client import MinIOStorageException, minio_client_service
+from app.services.cache.file_cache import cache_file_content
+from app.services.storage.minio_client import (
+    MinIOStorageException,
+    minio_client_service,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,17 +52,27 @@ def process_uploaded_file(file_id: str):
 
             file_stream = minio_client_service.get_object(
                 bucket_name=settings.MINIO_BUCKET_RECONCILIATION,
-                object_name=file.storage_path
+                object_name=file.storage_path,
             )
 
             file_content = file_stream.read()
             content_hash = hashlib.sha256(file_content).hexdigest()
 
-            logger.info(f"Processing file {file_id}: {file.filename}, hash: {content_hash}")
+            logger.info(
+                f"Processing file {file_id}: {file.filename}, hash: {content_hash}"
+            )
 
+            # Cache content in Redis (lazy-loading cache)
+            cache_file_content(file.id, file_content, ttl=86400)
+
+            # Store metadata in PostgreSQL (NOT raw content)
             file.status = FileStatus.SYNCED
-            file.content = {"raw": file_content.decode('utf-8')}
             file.file_hash = content_hash
+            file.content = {
+                "size_bytes": len(file_content),
+                "cached_at": "redis",
+                "hash": content_hash,
+            }
             session.commit()
 
         except (S3Error, MinIOStorageException, ConnectionError) as e:
@@ -72,18 +86,3 @@ def process_uploaded_file(file_id: str):
             file.status = FileStatus.FAILED
             file.failure_reason = str(e)
             session.commit()
-
-
-def store_file_in_memory(file:File, file_stream: bytes):
-    """
-    Store file content in memory for further processing.
-
-    Args:
-        file: File object to update
-        file_stream: Byte stream of the file content
-    """
-    file.content = {"raw": file_stream.decode('utf-8')}
-    file.status = FileStatus.EXTRACTED
-    with Session(engine) as session:
-        session.add(file)
-        session.commit()
