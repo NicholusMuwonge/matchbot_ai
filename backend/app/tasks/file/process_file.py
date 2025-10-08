@@ -55,55 +55,21 @@ def process_uploaded_file(file_id: str):
                 f"Processing file {file_id}: {file.filename}, hash: {content_hash}"
             )
 
-            # Check for duplicate files by hash (per-user, content-based)
-            duplicate = session.exec(
-                select(File).where(
-                    File.user_id == file.user_id,
-                    File.file_hash == content_hash,
-                    File.id != file.id,
-                    File.status.in_([
-                        FileStatus.SYNCED,
-                        FileStatus.SYNCING,
-                        FileStatus.UPLOADED
-                    ])
-                )
-            ).first()
+            duplicate = File.is_a_duplicate(session, file_hash=content_hash, file=file)
 
             if duplicate:
                 logger.info(
                     f"File {file_id} is duplicate of {duplicate.id} "
                     f"(hash: {content_hash}). Deduplicating."
                 )
-
-                # Delete newly uploaded file from MinIO to save storage
-                try:
-                    minio_client_service.delete_object(
-                        bucket_name=storage_config.MINIO_BUCKET_RECONCILIATION,
-                        object_name=file.storage_path
-                    )
-                    logger.info(f"Deleted duplicate file from MinIO: {file.storage_path}")
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to delete duplicate file from MinIO: {e}. "
-                        f"Cleanup job will handle it."
-                    )
-
-                # Reuse existing file's storage path
-                file.storage_path = duplicate.storage_path
-                file.file_hash = content_hash
-                file.status = FileStatus.SYNCED
-                file.file_metadata = {
-                    "size_bytes": len(file_content),
-                    "deduplicated": True,
-                    "original_file_id": str(duplicate.id),
-                    "original_filename": duplicate.filename,
-                    "note": f"Identical content to {duplicate.filename}"
-                }
-                session.commit()
-
-                logger.info(
-                    f"File {file_id} deduplicated successfully, "
-                    f"reusing storage from {duplicate.id}"
+                _delete_file_from_storage(file)
+                _reassign_to_existing_file(
+                    file=file,
+                    duplicate=duplicate,
+                    content_hash=content_hash,
+                    file_content=file_content,
+                    file_id=file_id,
+                    session=session
                 )
                 return
 
@@ -126,3 +92,45 @@ def process_uploaded_file(file_id: str):
             file.status = FileStatus.FAILED
             file.failure_reason = str(e)
             session.commit()
+
+
+def _delete_file_from_storage(file: File) -> None:
+    """Delete duplicate file from MinIO storage"""
+    try:
+        minio_client_service.delete_object(
+            bucket_name=storage_config.MINIO_BUCKET_RECONCILIATION,
+            object_name=file.storage_path
+        )
+        logger.info(f"Deleted duplicate file from MinIO: {file.storage_path}")
+    except Exception as e:
+        logger.warning(
+            f"Failed to delete duplicate file from MinIO: {e}. "
+            f"Cleanup job will handle it."
+        )
+
+
+def _reassign_to_existing_file(
+    file: File,
+    duplicate: File,
+    content_hash: str,
+    file_content: bytes,
+    file_id: str,
+    session: Session
+) -> None:
+    """Reassign file record to use existing file's storage path"""
+    file.storage_path = duplicate.storage_path
+    file.file_hash = content_hash
+    file.status = FileStatus.SYNCED
+    file.file_metadata = {
+        "size_bytes": len(file_content),
+        "deduplicated": True,
+        "original_file_id": str(duplicate.id),
+        "original_filename": duplicate.filename,
+        "note": f"Identical content to {duplicate.filename}"
+    }
+    session.commit()
+
+    logger.info(
+        f"File {file_id} deduplicated successfully, "
+        f"reusing storage from {duplicate.id}"
+    )
