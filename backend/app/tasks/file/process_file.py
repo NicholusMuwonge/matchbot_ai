@@ -10,7 +10,6 @@ from app.core.config import settings
 from app.core.db import engine
 from app.core.storage_config import storage_config
 from app.models.file import File, FileStatus
-from app.services.cache.file_cache import cache_file_content
 from app.services.storage.minio_client import (
     MinIOStorageException,
     minio_client_service,
@@ -56,13 +55,63 @@ def process_uploaded_file(file_id: str):
                 f"Processing file {file_id}: {file.filename}, hash: {content_hash}"
             )
 
-            cache_file_content(file.external_id, file_content, ttl=86400)
+            # Check for duplicate files by hash (per-user, content-based)
+            duplicate = session.exec(
+                select(File).where(
+                    File.user_id == file.user_id,
+                    File.file_hash == content_hash,
+                    File.id != file.id,
+                    File.status.in_([
+                        FileStatus.SYNCED,
+                        FileStatus.SYNCING,
+                        FileStatus.UPLOADED
+                    ])
+                )
+            ).first()
 
+            if duplicate:
+                logger.info(
+                    f"File {file_id} is duplicate of {duplicate.id} "
+                    f"(hash: {content_hash}). Deduplicating."
+                )
+
+                # Delete newly uploaded file from MinIO to save storage
+                try:
+                    minio_client_service.delete_object(
+                        bucket_name=storage_config.MINIO_BUCKET_RECONCILIATION,
+                        object_name=file.storage_path
+                    )
+                    logger.info(f"Deleted duplicate file from MinIO: {file.storage_path}")
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to delete duplicate file from MinIO: {e}. "
+                        f"Cleanup job will handle it."
+                    )
+
+                # Reuse existing file's storage path
+                file.storage_path = duplicate.storage_path
+                file.file_hash = content_hash
+                file.status = FileStatus.SYNCED
+                file.file_metadata = {
+                    "size_bytes": len(file_content),
+                    "deduplicated": True,
+                    "original_file_id": str(duplicate.id),
+                    "original_filename": duplicate.filename,
+                    "note": f"Identical content to {duplicate.filename}"
+                }
+                session.commit()
+
+                logger.info(
+                    f"File {file_id} deduplicated successfully, "
+                    f"reusing storage from {duplicate.id}"
+                )
+                return
+
+            # No duplicate - process normally
             file.status = FileStatus.SYNCED
             file.file_hash = content_hash
             file.file_metadata = {
                 "size_bytes": len(file_content),
-                "cached_at": "redis",
             }
             session.commit()
 

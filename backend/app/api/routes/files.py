@@ -64,6 +64,26 @@ def update_files_to_uploaded(
     "/presigned-upload",
     response_model=dict[str, Any],
     dependencies=[Security(security)],
+    summary="Generate presigned upload URL for file",
+    description="Creates a file record and returns a presigned URL for uploading a file directly to object storage. URL expires in 1 hour.",
+    responses={
+        200: {
+            "description": "Presigned upload URL generated successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "upload_url": "http://192.168.50.198:9000/bucket/path?X-Amz-Algorithm=...",
+                        "file_id": "8fe61ae3-b96e-4336-9463-a693424e80aa",
+                        "external_id": "ext_123abc",
+                        "object_name": "source/user123/file.csv",
+                        "expires_at": "2025-10-08T11:30:00Z",
+                        "expires_in": 3600
+                    }
+                }
+            }
+        },
+        500: {"description": "Failed to generate upload URL or create file record"}
+    }
 )
 def generate_presigned_upload_url(
     request: FileUploadRequest,
@@ -106,6 +126,36 @@ def generate_presigned_upload_url(
     "/presigned-uploads",
     response_model=list[dict[str, Any]],
     dependencies=[Security(security)],
+    summary="Generate multiple presigned upload URLs",
+    description="Creates multiple file records and returns presigned URLs for uploading files directly to object storage. Each URL expires in 1 hour.",
+    responses={
+        200: {
+            "description": "Bulk presigned upload URLs generated successfully",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "upload_url": "http://192.168.50.198:9000/bucket/path1?X-Amz-Algorithm=...",
+                            "file_id": "8fe61ae3-b96e-4336-9463-a693424e80aa",
+                            "external_id": "ext_123abc",
+                            "object_name": "source/user123/file1.csv",
+                            "expires_at": "2025-10-08T11:30:00Z",
+                            "expires_in": 3600
+                        },
+                        {
+                            "upload_url": "http://192.168.50.198:9000/bucket/path2?X-Amz-Algorithm=...",
+                            "file_id": "7ab52de4-c85a-5447-a574-b804535f91bb",
+                            "external_id": "ext_456def",
+                            "object_name": "source/user123/file2.csv",
+                            "expires_at": "2025-10-08T11:30:00Z",
+                            "expires_in": 3600
+                        }
+                    ]
+                }
+            }
+        },
+        500: {"description": "Failed to generate upload URLs or create file records"}
+    }
 )
 def generate_bulk_presigned_upload_urls(
     request: BulkUploadRequest,
@@ -152,7 +202,27 @@ def generate_bulk_presigned_upload_urls(
 
 
 @router.post(
-    "/confirm-uploads", response_model=dict[str, Any], dependencies=[Security(security)]
+    "/confirm-uploads",
+    response_model=dict[str, Any],
+    dependencies=[Security(security)],
+    summary="Confirm file uploads and trigger processing",
+    description="Confirms that files have been uploaded to object storage and triggers background processing tasks. Files must be in PENDING status.",
+    responses={
+        200: {
+            "description": "File uploads confirmed and processing started",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Files confirmed and processing started",
+                        "task_ids": ["task_123", "task_456"],
+                        "files_confirmed": 2
+                    }
+                }
+            }
+        },
+        400: {"description": "Files not found, belong to another user, or not in PENDING status"},
+        500: {"description": "Failed to confirm file uploads"}
+    }
 )
 def confirm_uploads(
     request: BulkConfirmUploadRequest,
@@ -184,6 +254,27 @@ def confirm_uploads(
     "/{file_id}/download-url",
     response_model=dict[str, Any],
     dependencies=[Security(security)],
+    summary="Generate presigned download URL for a file",
+    description="Returns a temporary presigned URL valid for 2 hours that allows direct download from object storage. The file must be in SYNCED status.",
+    responses={
+        200: {
+            "description": "Presigned URL generated successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "download_url": "http://192.168.50.198:9000/bucket/path?X-Amz-Algorithm=...",
+                        "expires_in": 7200,
+                        "file_id": "8fe61ae3-b96e-4336-9463-a693424e80aa",
+                        "filename": "transactions.csv"
+                    }
+                }
+            }
+        },
+        400: {"description": "File not ready for download (not in SYNCED status)"},
+        403: {"description": "Access denied - file belongs to another user"},
+        404: {"description": "File not found"},
+        500: {"description": "Failed to generate download URL"}
+    }
 )
 def generate_file_download_url(
     file_id: UUID,
@@ -226,6 +317,33 @@ def generate_file_download_url(
     "/{file_id}/status",
     response_model=dict[str, Any],
     dependencies=[Security(security)],
+    summary="Get file status and metadata",
+    description="Returns comprehensive status information about an uploaded file including processing status, hash, size, and timestamps.",
+    responses={
+        200: {
+            "description": "File status retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "file_id": "8fe61ae3-b96e-4336-9463-a693424e80aa",
+                        "external_id": "ext_123abc",
+                        "filename": "transactions.csv",
+                        "status": "SYNCED",
+                        "file_size_bytes": 91299,
+                        "file_hash": "a1b2c3d4...",
+                        "content_type": "text/csv",
+                        "provider": "MINIO",
+                        "failure_reason": None,
+                        "metadata": {"size_bytes": 91299},
+                        "created_at": "2025-10-08T10:30:00Z",
+                        "updated_at": "2025-10-08T10:30:15Z"
+                    }
+                }
+            }
+        },
+        403: {"description": "Access denied - file belongs to another user"},
+        404: {"description": "File not found"}
+    }
 )
 def get_file_status(
     file_id: UUID,
