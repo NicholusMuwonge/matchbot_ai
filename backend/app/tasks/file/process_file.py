@@ -73,7 +73,6 @@ def process_uploaded_file(file_id: str):
                 )
                 return
 
-            # No duplicate - process normally
             file.status = FileStatus.SYNCED
             file.file_hash = content_hash
             file.file_metadata = {
