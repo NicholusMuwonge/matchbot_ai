@@ -1,6 +1,5 @@
 """Tests for process_uploaded_file task."""
 
-from io import BytesIO
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -49,9 +48,8 @@ class TestProcessUploadedFile:
         - File status updated to SYNCED
         - Metadata stored with correct size
         """
-        # Arrange
+
         test_content = b"Date,Amount,Description\n2025-01-01,100.50,Test transaction"
-        expected_hash = "e5e9fa1ba31ecd1ae84f75caaa474f3a663f05f4"  # SHA256 of test_content (first 40 chars)
 
         mock_response = MagicMock()
         mock_response.read.return_value = test_content
