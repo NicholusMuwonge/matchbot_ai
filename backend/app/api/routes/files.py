@@ -77,13 +77,13 @@ def update_files_to_uploaded(
                         "external_id": "ext_123abc",
                         "object_name": "source/user123/file.csv",
                         "expires_at": "2025-10-08T11:30:00Z",
-                        "expires_in": 3600
+                        "expires_in": 3600,
                     }
                 }
-            }
+            },
         },
-        500: {"description": "Failed to generate upload URL or create file record"}
-    }
+        500: {"description": "Failed to generate upload URL or create file record"},
+    },
 )
 def generate_presigned_upload_url(
     request: FileUploadRequest,
@@ -140,7 +140,7 @@ def generate_presigned_upload_url(
                             "external_id": "ext_123abc",
                             "object_name": "source/user123/file1.csv",
                             "expires_at": "2025-10-08T11:30:00Z",
-                            "expires_in": 3600
+                            "expires_in": 3600,
                         },
                         {
                             "upload_url": "http://192.168.50.198:9000/bucket/path2?X-Amz-Algorithm=...",
@@ -148,14 +148,14 @@ def generate_presigned_upload_url(
                             "external_id": "ext_456def",
                             "object_name": "source/user123/file2.csv",
                             "expires_at": "2025-10-08T11:30:00Z",
-                            "expires_in": 3600
-                        }
+                            "expires_in": 3600,
+                        },
                     ]
                 }
-            }
+            },
         },
-        500: {"description": "Failed to generate upload URLs or create file records"}
-    }
+        500: {"description": "Failed to generate upload URLs or create file records"},
+    },
 )
 def generate_bulk_presigned_upload_urls(
     request: BulkUploadRequest,
@@ -215,14 +215,16 @@ def generate_bulk_presigned_upload_urls(
                     "example": {
                         "message": "Files confirmed and processing started",
                         "task_ids": ["task_123", "task_456"],
-                        "files_confirmed": 2
+                        "files_confirmed": 2,
                     }
                 }
-            }
+            },
         },
-        400: {"description": "Files not found, belong to another user, or not in PENDING status"},
-        500: {"description": "Failed to confirm file uploads"}
-    }
+        400: {
+            "description": "Files not found, belong to another user, or not in PENDING status"
+        },
+        500: {"description": "Failed to confirm file uploads"},
+    },
 )
 def confirm_uploads(
     request: BulkConfirmUploadRequest,
@@ -265,16 +267,16 @@ def confirm_uploads(
                         "download_url": "http://192.168.50.198:9000/bucket/path?X-Amz-Algorithm=...",
                         "expires_in": 7200,
                         "file_id": "8fe61ae3-b96e-4336-9463-a693424e80aa",
-                        "filename": "transactions.csv"
+                        "filename": "transactions.csv",
                     }
                 }
-            }
+            },
         },
         400: {"description": "File not ready for download (not in SYNCED status)"},
         403: {"description": "Access denied - file belongs to another user"},
         404: {"description": "File not found"},
-        500: {"description": "Failed to generate download URL"}
-    }
+        500: {"description": "Failed to generate download URL"},
+    },
 )
 def generate_file_download_url(
     file_id: UUID,
@@ -336,14 +338,14 @@ def generate_file_download_url(
                         "failure_reason": None,
                         "metadata": {"size_bytes": 91299},
                         "created_at": "2025-10-08T10:30:00Z",
-                        "updated_at": "2025-10-08T10:30:15Z"
+                        "updated_at": "2025-10-08T10:30:15Z",
                     }
                 }
-            }
+            },
         },
         403: {"description": "Access denied - file belongs to another user"},
-        404: {"description": "File not found"}
-    }
+        404: {"description": "File not found"},
+    },
 )
 def get_file_status(
     file_id: UUID,

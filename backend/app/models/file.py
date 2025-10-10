@@ -76,16 +76,15 @@ class File(FileBase, table=True):
     def is_a_duplicate(cls, session, file_hash: str, file: "File"):
         return session.exec(
             select(cls).where(
-            cls.user_id == file.user_id,
-            cls.file_hash == file_hash,
-            cls.id != file.id,
-            cls.status.in_([
-                FileStatus.SYNCED,
-                FileStatus.SYNCING,
-                FileStatus.UPLOADED
-            ])
-        )).first()
-    
+                cls.user_id == file.user_id,
+                cls.file_hash == file_hash,
+                cls.id != file.id,
+                cls.status.in_(
+                    [FileStatus.SYNCED, FileStatus.SYNCING, FileStatus.UPLOADED]
+                ),
+            )
+        ).first()
+
     def __repr__(self):
         return (
             f"<File(id={self.id}, filename='{self.filename}', "
