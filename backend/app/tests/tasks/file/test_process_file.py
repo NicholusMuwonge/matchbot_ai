@@ -55,27 +55,21 @@ class TestProcessUploadedFile:
         mock_response.read.return_value = test_content
         mock_minio.get_object.return_value = mock_response
 
-        # Act
         process_uploaded_file(str(uploaded_file.id))
 
-        # Assert - Verify MinIO was called correctly
         mock_minio.get_object.assert_called_once_with(
             bucket_name="reconciliation",
             object_name=uploaded_file.storage_path,
         )
 
-        # Assert - Verify file status updated
         db.refresh(uploaded_file)
         assert uploaded_file.status == FileStatus.SYNCED
 
-        # Assert - Verify hash was calculated and stored
         assert uploaded_file.file_hash is not None
-        assert len(uploaded_file.file_hash) == 64  # SHA256 hash length
+        assert len(uploaded_file.file_hash) == 64
 
-        # Assert - Verify metadata stored correctly
         assert uploaded_file.file_metadata is not None
         assert uploaded_file.file_metadata["size_bytes"] == len(test_content)
         assert "deduplicated" not in uploaded_file.file_metadata
 
-        # Assert - Verify no MinIO delete was called (not a duplicate)
         mock_minio.delete_object.assert_not_called()
