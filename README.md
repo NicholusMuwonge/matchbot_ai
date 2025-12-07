@@ -255,10 +255,6 @@ docker-compose up -d
 - **Feature Flags**: Gradual rollout capability
 - **Backward Compatibility**: API versioning strategy
 
-## License
-
-MIT License - See LICENSE file for details
-
 ---
 
 *This MVP establishes the foundation for a comprehensive financial reconciliation platform. The modular monolith architecture provides the simplicity needed for rapid development while maintaining clear boundaries for future service extraction as the platform scales.*
